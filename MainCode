@@ -1,37 +1,43 @@
+//ELEC 299 competitions
+//for teams 10 11 12
+
+//libraries to include
 #include <Servo.h>
 #include "QSerial.h"
+
+//pin definitions
 #define IRPIN 3
 #define sense A3
-#define L1 11
-#define L2 12
-#define L3 13
-#define IRFRONT A1
-#define RIGHTSPD 6
-#define RIGHTDIR 7
-#define LEFTSPD 5
-#define LEFTDIR 4
-int threshold1 = 225;
-int threshold2 = 350;
+#define L1 A3
+#define L2 A4
+#define L3 A5
+//other constant definitions
 
+
+//start of global variables
 Servo base, neck, clamp;
 QSerial IRrx;
 boolean running = true;
 int x = 0;
 int y = 0;
 int dir = 0;
-int instructionnumber = 0;
+int instructionnumber = 0;//make this one the same all around
+
+
 void setup() {
-  //debug, will be started in main code on full project
+  
 Serial.begin(9600);
+/*
 base.attach(8);
 neck.attach(9);
 clamp.attach(10);
+*/
 pinMode(sense,INPUT);
 pinMode(L1,OUTPUT);
 pinMode(L2,OUTPUT);
 pinMode(L3,OUTPUT);
 IRreceive();
-delay(5000);
+delay(1000);
 }
 
 
@@ -40,16 +46,13 @@ delay(5000);
 
 
 void loop() {
-  // put your main code here, to run repeatedly:
-  //getBall();
-  //delay(1000);
-  serialCheck()
-  //dropBall();
   serialCheck();
+  //line follower code()
   
-  
-
 }
+
+
+
 void serialEvent(){
   while(Serial.available()){
     delay(400);
@@ -169,36 +172,10 @@ void IRreceive()
     }
   }
 }
-//void getBall()
+void getBall()
 {
 }
-//void dropBall()
+void dropBall()
 {
 }
-//void lineFollower(){
-//This will go under the line following code
-  
-   int dist = 0;
-   dist = analogRead(IRFRONT);
-   Serial.println(dist);
-    if (dist<threshold1) {
-    digitalWrite(RIGHTDIR,HIGH);
-  digitalWrite(LEFTDIR,HIGH);
-  analogWrite(RIGHTSPD,255);
-  analogWrite(LEFTSPD,255);
-    }
- if (dist>threshold1 && dist<threshold2) {
-    digitalWrite(RIGHTDIR,HIGH);
-  digitalWrite(LEFTDIR,HIGH);
-  analogWrite(RIGHTSPD,120);
-  analogWrite(LEFTSPD,120);
-    }
-    if (dist>threshold2) {
-    digitalWrite(RIGHTDIR,HIGH);
-  digitalWrite(LEFTDIR,HIGH);
-  analogWrite(RIGHTSPD,0);
-  analogWrite(LEFTSPD,0);
-    }
-delay(10);
-  
-}
+
