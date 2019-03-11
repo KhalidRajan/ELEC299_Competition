@@ -1,37 +1,61 @@
+//ELEC 299 competitions
+//for teams 10 11 12
+
+//libraries to include
 #include <Servo.h>
 #include "QSerial.h"
+
+//pin definitions
 #define IRPIN 3
-#define sense A3
-#define L1 11
-#define L2 12
-#define L3 13
+
 #define IRFRONT A1
+#define GRIPSENSOR A2
+#define L1 A3
+#define L2 A4
+#define L3 A5
+
 #define RIGHTSPD 6
 #define RIGHTDIR 7
 #define LEFTSPD 5
 #define LEFTDIR 4
-int threshold1 = 225;
-int threshold2 = 350;
+#define MAXPULSE 65000
+#define RESOLUTION 20
 
-Servo base, neck, clamp;
+//other constant definitions
+#define threshold1 225
+#define threshold2 350
+
+//start of global variables
+Servo PAN, TILT, GRIP;
+
 QSerial IRrx;
+
 boolean running = true;
+boolean debugging = false;
+
 int x = 0;
 int y = 0;
 int dir = 0;
-int instructionnumber = 0;
+int instructionnumber = 0;//make this one the same all around
+int dist;
+int force = 0;
+int n = 40;
+//end of global variables
+
 void setup() {
-  //debug, will be started in main code on full project
+  
 Serial.begin(9600);
+/*
 base.attach(8);
 neck.attach(9);
 clamp.attach(10);
+*/
 pinMode(sense,INPUT);
 pinMode(L1,OUTPUT);
 pinMode(L2,OUTPUT);
 pinMode(L3,OUTPUT);
 IRreceive();
-delay(5000);
+delay(1000);
 }
 
 
@@ -40,17 +64,15 @@ delay(5000);
 
 
 void loop() {
-  // put your main code here, to run repeatedly:
-  //getBall();
-  //delay(1000);
-  serialCheck()
-  //dropBall();
   serialCheck();
+  //line follower code()
   
-  
-
 }
+
+
+
 void serialEvent(){
+  debugging = true;
   while(Serial.available()){
     delay(400);
     char rcv = (char)Serial.read();
@@ -140,11 +162,12 @@ void serialEvent(){
       Serial.println(" not implemented.");
     }
   }
+  debugging = false;
 }
 
 void serialCheck()
 {
-  if(Serial.available())
+  if(Serial.available() && !debugging)
     serialEvent();
 }
 
@@ -169,15 +192,65 @@ void IRreceive()
     }
   }
 }
-//void getBall()
+void getBall()
 {
+  //PICKUP BALL
+
+  //drive to wall code
+  //might need to use black line following code
+
+ // unsigned long pickUpTime1 = millis();
+  dist = analogRead(IRFRONT);
+  Serial.println(dist);
+  digitalWrite(LEFTDIR, HIGH);
+  digitalWrite(RIGHTDIR, HIGH);
+  analogWrite(LEFTSPD, 100);   //PWM Speed Control
+  analogWrite(RIGHTSPD, 100);   //PWM Speed Control
+
+
+
+//AT WALL
+  if (dist > 500)
+ // unsigned long pickUpTime2 = millis();
+// unsigned long pickUpTime = pickUpTime2 - pickUpTime1 ;
+
+  { analogWrite(LEFTSPD, 0);   //PWM Speed Control
+    analogWrite(RIGHTSPD, 0);   //PWM Speed Control
+    delay(1000);
+   
+//GRAB BALL
+ 
+
+      
+      while (force < 60) {
+        force = analogRead(GRIPSENSOR); //input pin used for gripper sensitivity (this should read HIGH or LOW
+        GRIP.write(n);
+        n = n + 2; 
+      Serial.print(force);
+      if (force > 60) {
+        GRIP.write(n + 10);
+        delay(500);
+        TILT.write(160);
+        delay(500);
+        break;
+      }
+      delay(150);
+    }
+
+    delay(1000);
+       
+  }
 }
-//void dropBall()
+void dropBall()
 {
-}
-//void lineFollower(){
-//This will go under the line following code
   
+}
+
+
+
+void lineFollower(){
+//This will go under the line following code
+
    int dist = 0;
    dist = analogRead(IRFRONT);
    Serial.println(dist);
@@ -200,5 +273,6 @@ void IRreceive()
   analogWrite(LEFTSPD,0);
     }
 delay(10);
-  
+
 }
+
