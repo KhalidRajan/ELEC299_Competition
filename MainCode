@@ -5,6 +5,14 @@
 #define L1 11
 #define L2 12
 #define L3 13
+#define IRFRONT A2
+#define RIGHTSPD 6
+#define RIGHTDIR 7
+#define LEFTSPD 5
+#define LEFTDIR 4
+int threshold1 = 225;
+int threshold2 = 350;
+
 Servo base, neck, clamp;
 QSerial IRrx;
 boolean running = true;
@@ -38,6 +46,7 @@ void loop() {
   serialCheck()
   //dropBall();
   serialCheck();
+  
   
 
 }
@@ -166,5 +175,30 @@ void IRreceive()
 //void dropBall()
 {
 }
-}
+//void lineFollower(){
+//This will go under the line following code
+  
+   int dist = 0;
+   dist = analogRead(IRFRONT);
+   Serial.println(dist);
+    if (dist<threshold1) {
+    digitalWrite(RIGHTDIR,HIGH);
+  digitalWrite(LEFTDIR,HIGH);
+  analogWrite(RIGHTSPD,255);
+  analogWrite(LEFTSPD,255);
+    }
+ if (dist>threshold1 && dist<threshold2) {
+    digitalWrite(RIGHTDIR,HIGH);
+  digitalWrite(LEFTDIR,HIGH);
+  analogWrite(RIGHTSPD,120);
+  analogWrite(LEFTSPD,120);
+    }
+    if (dist>threshold2) {
+    digitalWrite(RIGHTDIR,HIGH);
+  digitalWrite(LEFTDIR,HIGH);
+  analogWrite(RIGHTSPD,0);
+  analogWrite(LEFTSPD,0);
+    }
+delay(10);
+  
 }
