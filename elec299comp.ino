@@ -13,7 +13,6 @@
 #define L1 A3
 #define L2 A4
 #define L3 A5
-
 #define RIGHTSPD 6
 #define RIGHTDIR 7
 #define LEFTSPD 5
@@ -39,22 +38,30 @@ int dir = 0;
 int instructionnumber = 0;//make this one the same all around
 int dist;
 int force = 0;
-int n = 40;
+
 //end of global variables
 
 void setup() {
   
-Serial.begin(9600);
-/*
-base.attach(8);
-neck.attach(9);
-clamp.attach(10);
-*/
-pinMode(sense,INPUT);
+Serial.begin(115200);
 pinMode(L1,OUTPUT);
 pinMode(L2,OUTPUT);
 pinMode(L3,OUTPUT);
-IRreceive();
+//IRreceive(); // receive IR signal
+
+pinMode(GRIPSENSOR, INPUT); //gripforcesensor
+
+//motor initialization code area
+  PAN.attach(11);    //pan fully left at 0, fullly right at 180, 90 is center
+  TILT.attach(9);    //tilt horizontal at 70 degrees, verticle at 160, dont go below 15 degrees
+  GRIP.attach(10);   //grip open entirely at 40 degrees to closed entirely at 180 degrees
+  PAN.write(90);
+  delay(100);
+  TILT.write(160);
+  delay(100);
+  GRIP.write(40);
+  delay(100);
+
 delay(1000);
 }
 
@@ -65,6 +72,12 @@ delay(1000);
 
 void loop() {
   serialCheck();
+  
+  //test code for get and drop only
+  getBall();
+  delay(1000);
+  dropBall();
+  delay(1000);
   //line follower code()
   
 }
@@ -127,12 +140,14 @@ void serialEvent(){
       case 'O':
       Serial.println("MOO: Dropping.");
       //call drop function
+      dropBall();
       break;
 
       //Pick up
       case 'P':
       Serial.println("MOO: Picking up.");
       //call pickup function
+      grabballnow();
       break;
 
       //Next instruction
@@ -200,55 +215,58 @@ void getBall()
   //might need to use black line following code
 
  // unsigned long pickUpTime1 = millis();
-  dist = analogRead(IRFRONT);
-  Serial.println(dist);
+  
   digitalWrite(LEFTDIR, HIGH);
   digitalWrite(RIGHTDIR, HIGH);
   analogWrite(LEFTSPD, 100);   //PWM Speed Control
   analogWrite(RIGHTSPD, 100);   //PWM Speed Control
 
+while(dist <= 500)
+  {
+    dist = analogRead(IRFRONT);
+    Serial.println(dist);
+  }
+  //AT WALL
+  grabballnow();
+}
 
-
-//AT WALL
-  if (dist > 500)
- // unsigned long pickUpTime2 = millis();
-// unsigned long pickUpTime = pickUpTime2 - pickUpTime1 ;
-
-  { analogWrite(LEFTSPD, 0);   //PWM Speed Control
+void grabballnow()// grabbing part only
+{
+  TILT.write(90);
+    analogWrite(LEFTSPD, 0);   //PWM Speed Control
     analogWrite(RIGHTSPD, 0);   //PWM Speed Control
     delay(1000);
    
 //GRAB BALL
  
 
-      
-      while (force < 60) {
+      force = 0;
+      int n = 40;
+      while (force < 600 && n < 175 ) {
+        
         force = analogRead(GRIPSENSOR); //input pin used for gripper sensitivity (this should read HIGH or LOW
+        Serial.print("F:");
+        Serial.println(force);
         GRIP.write(n);
         n = n + 2; 
-      Serial.print(force);
-      if (force > 60) {
-        GRIP.write(n + 10);
+        
+      delay(150);
+    }
         delay(500);
         TILT.write(160);
         delay(500);
-        break;
-      }
-      delay(150);
-    }
-
-    delay(1000);
-       
-  }
 }
 void dropBall()
 {
-  
+  TILT.write(90);
+  delay(500);
+  GRIP.write(40);
+  delay(500);
 }
 
 
 
-void lineFollower(){
+void getballWallCheck(){
 //This will go under the line following code
 
    int dist = 0;
@@ -273,6 +291,5 @@ void lineFollower(){
   analogWrite(LEFTSPD,0);
     }
 delay(10);
-
 }
 
