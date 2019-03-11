@@ -1,0 +1,170 @@
+#include <Servo.h>
+#include "QSerial.h"
+#define IRPIN 3
+#define sense A3
+#define L1 11
+#define L2 12
+#define L3 13
+Servo base, neck, clamp;
+QSerial IRrx;
+boolean running = true;
+int x = 0;
+int y = 0;
+int dir = 0;
+int instructionnumber = 0;
+void setup() {
+  //debug, will be started in main code on full project
+Serial.begin(9600);
+base.attach(8);
+neck.attach(9);
+clamp.attach(10);
+pinMode(sense,INPUT);
+pinMode(L1,OUTPUT);
+pinMode(L2,OUTPUT);
+pinMode(L3,OUTPUT);
+IRreceive();
+delay(5000);
+}
+
+
+
+
+
+
+void loop() {
+  // put your main code here, to run repeatedly:
+  //getBall();
+  //delay(1000);
+  serialCheck()
+  //dropBall();
+  serialCheck();
+  
+
+}
+void serialEvent(){
+  while(Serial.available()){
+    delay(400);
+    char rcv = (char)Serial.read();
+    switch (rcv){
+      //Right turn
+      case 'R':
+      Serial.println("MOO: Turning Right");
+      break; //have a kitkat
+
+      //Left turn
+      case 'L':
+      Serial.println("MOO: Turning Left");
+      break;
+
+      //Start or stop toggle
+      case 'S':
+      if(running)
+        Serial.println("MOO: Stopping");
+      else
+        Serial.println("MOO: Starting");
+      running = !running;
+      break;
+
+      //Increment X position variable
+      case 'X':
+      Serial.print("MOO: Adjust x, now: ");
+      x = (x+1)%5;
+      Serial.println(x);
+      break;
+
+      //Increment Y position variable
+      case 'Y':
+      Serial.print("MOO: Adjust y, now: ");
+      y = (y+1)%6;
+      Serial.println(y);
+      break;
+
+      //Increment direction variable
+      case 'D':
+      Serial.print("MOO: Adjust dir, now: ");
+      dir = (dir+1)%4;
+      Serial.println(dir);
+      break;
+
+      //Continue going forward until intersection
+      case 'C':
+      Serial.println("MOO: Continuing forward.");
+      //do something
+      break;
+
+      //Drop
+      case 'O':
+      Serial.println("MOO: Dropping.");
+      //call drop function
+      break;
+
+      //Pick up
+      case 'P':
+      Serial.println("MOO: Picking up.");
+      //call pickup function
+      break;
+
+      //Next instruction
+      case 'N':
+      Serial.print("MOO: Next instruction. #");
+      instructionnumber = instructionnumber+1;
+      Serial.println(instructionnumber);
+      break;
+
+      //Previous instruction (Back one)
+      case 'B':
+      Serial.print("MOO: Prev. instruction. #");
+      if(instructionnumber>0)
+        instructionnumber = instructionnumber-1;
+      Serial.println(instructionnumber);
+      break;
+
+/*
+      //a function very close to making the cut
+      case 'M':
+      Serial.println("MOO: Moo.");
+      break;
+ */     
+      default:
+      Serial.print("Function ");
+      Serial.print(rcv);
+      Serial.println(" not implemented.");
+    }
+  }
+}
+
+void serialCheck()
+{
+  if(Serial.available())
+    serialEvent();
+}
+
+void IRreceive()
+{
+  IRrx.attach(IRPIN,-1);
+  char rcv = 0;
+  while (rcv < 1)
+  {
+     rcv = IRrx.receive(200);
+    switch(rcv)
+    {
+      case 0:
+      case -1:
+      Serial.println("IR Error 1");
+      case -2:
+      Serial.println("IR Error 2");
+      break;
+      default:
+      Serial.print("IR get: ");
+      Serial.println(rcv);
+    }
+  }
+}
+//void getBall()
+{
+}
+//void dropBall()
+{
+}
+}
+}
