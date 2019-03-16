@@ -77,9 +77,9 @@ int countInter;
 int LCount = 0;
 int RCount = 0;
 
-int LTHRESH = 900; //black
-int RTHRESH = 900; //black
-int CTHRESH = 900; //black
+int LTHRESH = 980; //black
+int RTHRESH = 980; //black
+int CTHRESH = 980; //black //for team 11 is 980
 int lval;
 int rval;
 int cval;
@@ -95,16 +95,19 @@ specLoc homeLocN[3] = {{1,0,1},
                     {2,0,1},
                     {3,0,1}};
 //IR variables
-byte startIR = '0'; //'0' for check sensor for byte, '1', '2', '3' to force without checking.
+byte startIR = '1'; //'0' for check sensor for byte, '1', '2', '3' to force without checking.
 
 //start of setup code
 void setup() {
   
 Serial.begin(115200);
-pinMode(L1,OUTPUT);
-pinMode(L2,OUTPUT);
-pinMode(L3,OUTPUT);
-if(startIR = '0')
+Serial.println("Starting ELEC299 Teams 10-12 Competition Program.");
+pinMode(L1,INPUT);
+pinMode(L2,INPUT);
+pinMode(L3,INPUT);
+Serial.print("StartIR is: ");
+Serial.println(startIR);
+if(startIR == '0')
   startIR = IRreceive();
 //check for received or forced startIR value
 switch(startIR)
@@ -136,6 +139,7 @@ pinMode(GRIPSENSOR, INPUT); //gripforcesensor
   GRIP.write(40);
   delay(100);
   
+  delay(2000);
   
   //test path finding initialization code. Please update later.
   currentLoc = {pathselect+1,-1,0};
@@ -289,7 +293,7 @@ byte IRreceive()
   Serial.println("Waiting for IR.");
   IRrx.attach(IRPIN,-1);
   byte rcv = 0;
-  while (rcv < 1)
+  while (rcv < 1 || rcv > 250)
   {
      rcv = IRrx.receive(200);
     switch(rcv)
@@ -574,6 +578,15 @@ void driveTo(specLoc tLoc){ //go somewhere in a straight line
 //
 //             Serial.print("number of intersections is");
 //             Serial.println(countInter);
+            /*
+            Serial.print("BL Sensors: ");
+            Serial.print(lval);
+            Serial.print("\t");
+            Serial.print(cval);
+            Serial.print("\t");
+            Serial.println(rval);
+            Serial.print("\t");
+            */
             drive(true); 
             if (currentLoc.y == 0 && currentLoc.dir == 1){
                 lval = rval;
@@ -581,12 +594,7 @@ void driveTo(specLoc tLoc){ //go somewhere in a straight line
             else if (currentLoc.y == 0 && currentLoc.dir == 3){
                 lval = rval;
             }
-            Serial.print(lval);
-            Serial.print("     ");
-            Serial.print(cval);
-            Serial.print("     ");
-            Serial.println(rval);
-            Serial.print("     ");
+            
 
 /*updateLoc*/if (lval >= LTHRESH && cval >= CTHRESH && rval >= RTHRESH) {//passed an intersection
                 delay(150);
@@ -608,12 +616,12 @@ void driveTo(specLoc tLoc){ //go somewhere in a straight line
                   Serial.println("arrived at target");
                   return; 
              }
-             Serial.print("Current x and y is ");
-             Serial.print(currentLoc.x);
-             Serial.println(currentLoc.y);
+ //            Serial.print("Current x and y is ");
+ //            Serial.print(currentLoc.x);
+ //            Serial.println(currentLoc.y);
 
-             Serial.print("Current dir is ");
-             Serial.println(currentLoc.dir);
+  //           Serial.print("Current dir is ");
+  //           Serial.println(currentLoc.dir);
              
     }
 }
