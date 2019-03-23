@@ -285,7 +285,7 @@ void getBall()
   digitalWrite(RIGHTDIR, HIGH);
   analogWrite(LEFTSPD, 100);   //PWM Speed Control
   analogWrite(RIGHTSPD, 100);   //PWM Speed Control
-
+int dist = 0;
 while(dist <= 500)
   {
     dist = analogRead(IRFRONT);
@@ -297,7 +297,7 @@ while(dist <= 500)
 
 void grabballnow()// grabbing part only
 {
-  int tiltangle[] = {70,70,70};
+  int tiltangle[] = {30,70,70};
   
   TILT.write(tiltangle[teamcar]);
     analogWrite(LEFTSPD, 0);   //PWM Speed Control
@@ -327,10 +327,13 @@ void grabballnow()// grabbing part only
 }
 void dropBall()
 {
-  TILT.write(90);
+  int tiltangle[] = {30,70,70};
+  TILT.write(tiltangle[teamcar]);
   delay(500);
   GRIP.write(40);
   delay(500);
+ int tiltangle2[] = {160,160,160};
+  TILT.write(tiltangle2[teamcar]);
   holding = false;
 }
 
@@ -364,9 +367,9 @@ Serial.println("Waiting for bumper");
            int  cval = analogRead(C);
           if (lval >= LTHRESH[teamcar]){   //if left sensor sees black
                adjSpeed(1, 0);
-            }else if (rval >= RTHRESH[teamcar]){  //if right sensor sees black
+            }else if (rval >= LTHRESH[teamcar]){  //if right sensor sees black
                adjSpeed(0, 1);
-            }else if (cval >= CTHRESH[teamcar]){
+            }else if (cval >= LTHRESH[teamcar]){
                adjSpeed(1, 1);
             }        
         }
@@ -405,13 +408,13 @@ while(1)
            int  cval = analogRead(C);
           if (lval >= LTHRESH[teamcar]){   //if left sensor sees black
                adjSpeed(1, 0);
-            }else if (rval >= RTHRESH[teamcar]){  //if right sensor sees black
+            }else if (rval >= LTHRESH[teamcar]){  //if right sensor sees black
                adjSpeed(0, 1);
-            }else if (cval >= CTHRESH[teamcar]){
+            }else if (cval >= LTHRESH[teamcar]){
                adjSpeed(1, 1);
             }        
 
-        if (lval >= LTHRESH[teamcar] && cval >= CTHRESH[teamcar] && rval >= RTHRESH[teamcar])
+        if (lval >= LTHRESH[teamcar] && cval >= LTHRESH[teamcar] && rval >= LTHRESH[teamcar])
           {
             Serial.println("Finished get/drop");
             stopD();

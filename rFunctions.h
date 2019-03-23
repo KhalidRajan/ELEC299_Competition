@@ -27,8 +27,6 @@ typedef struct specLoc{
 int countInter;
 int i;
 int LTHRESH[] = {970,990,850}; //black line sensor threshold for each team's  car
-int RTHRESH[] = {970,990,850}; //black
-int CTHRESH[] = {970,990,850}; //black
 int PROXTHRESH[] = {350,420,420};
 int INTERSECTSTEP[]={6,8,6};
 
@@ -104,7 +102,7 @@ void driveTo(specLoc tLoc){ //go somewhere in a straight line
             else if (currentLoc.dir == 3){
                 intL = intR;
             }
-/*updateLoc*/if (intL >= LTHRESH[teamcar] && cval >= CTHRESH[teamcar] && intR >= RTHRESH[teamcar]){//passed an intersection
+/*updateLoc*/if (intL >= LTHRESH[teamcar] && cval >= LTHRESH[teamcar] && intR >= LTHRESH[teamcar]){//passed an intersection
                 countInter += 1;
                 if (currentLoc.dir == 0){  currentLoc.y += 1;}      //if facing north
                 else if (currentLoc.dir == 1){currentLoc.x += 1;} //if facing east
@@ -137,9 +135,9 @@ void driveTo(specLoc tLoc){ //go somewhere in a straight line
             }
             if (lval >= LTHRESH[teamcar]){   //if left sensor sees black
                adjSpeed(1, 0);
-            }else if (rval >= RTHRESH[teamcar]){  //if right sensor sees black
+            }else if (rval >= LTHRESH[teamcar]){  //if right sensor sees black
                adjSpeed(0, 1);
-            }else if (cval >= CTHRESH[teamcar]){
+            }else if (cval >= LTHRESH[teamcar]){
                adjSpeed(1, 1);
             }        
       			r = analogRead(IRr);
@@ -194,7 +192,7 @@ void pivot(int targetDir){
                   eCount+= 1;
               }
               delayMicroseconds(1000);
-              if (eCount >= angle*velFact && analogRead(C) >= CTHRESH[teamcar]){
+              if (eCount >= angle*velFact && analogRead(C) >= LTHRESH[teamcar]){
                   currentLoc.dir = targetDir;
                   Serial.println("reached black line/done pivot");
                   break;

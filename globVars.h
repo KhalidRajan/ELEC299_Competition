@@ -21,9 +21,6 @@
 #define TILTPIN 9
 #define GRIPPIN 8
 
-//other constant definitions
-#define threshold1 225
-#define threshold2 350
 //pathfinding constants
 
 
@@ -42,7 +39,6 @@ int x = 0;
 int y = 0;
 int dir = 0;
 int instructionnumber = 0;//make this one the same all around
-int dist;
 
 int pathselect;
 
@@ -54,7 +50,7 @@ int pathselect;
 
 
 //IR variables
-byte startIR = '1'; //'0' for check sensor for byte, '1', '2', '3' to force without checking.
+byte startIR = '2'; //'0' for check sensor for byte, '1', '2', '3' to force without checking.
 
 //grab drop ball
 boolean holding = false;
