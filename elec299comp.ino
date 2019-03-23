@@ -2,6 +2,7 @@
 //for teams 10 11 12
 
 //---------PUT CAR NUMBER HERE (Team 10 = 0, Team  11 = 1, Team  12 = 2)
+//used for thresholds and other values that are unique to each car.
 int teamcar = 1;
 
 //libraries to include
@@ -11,23 +12,23 @@ int teamcar = 1;
 #include "./globVars.h"
 #include "./rFunctions.h"
 
-specLoc pathA[24] = {{4,0,1},{1,0,3},{1,0,2}, //first ball... all ball retrievals from this positions should end in {1,0,2}
-{1,2,0},{0,2,3},{0,4,0},{0,2,2},{1,2,1},{1,0,2}, // second ball
-{0,0,3},{1,0,1},{1,0,2}, //third ball
-{1,2,0},{0,2,3},{1,2,1},{1,0,2}, //fourth ball
-{1,3,0},{0,3,3},{1,3,1},{1,0,2}, //fifth ball
-{1,4,0},{0,4,3},{1,4,1},{1,0,2}}; //sixth ball
+specLoc pathA[24] = {{4,0,1,true},{1,0,3,false},{1,0,2,true}, //first ball... all ball retrievals from this positions should end in {1,0,2}
+{1,2,0,false},{0,2,3,false},{0,4,0,true},{0,2,2,false},{1,2,1,false},{1,0,2,true}, // second ball
+{0,0,3,true},{1,0,1,false},{1,0,2,true}, //third ball
+{1,2,0,false},{0,2,3,true},{1,2,1,false},{1,0,2,true}, //fourth ball
+{1,3,0,false},{0,3,3,true},{1,3,1,false},{1,0,2,true}, //fifth ball
+{1,4,0,false},{0,4,3,true},{1,4,1,false},{1,0,2,true}}; //sixth ball
 
-specLoc pathB[18] = {{2,4,0},{4,4,1},{2,4,3},{2,0,2},//first ball... all ball retrievals from this position should end in {2,0,2}
-{2,3,0},{1,3,3},{1,4,0},{1,3,2},{2,3,1},{2,0,2}, //second ball
-{2,3,0},{3,3,1},{3,4,0},{3,3,3},{2,3,3},{2,0,2}, //third ball
-{2,4,0},{2,0,2}}; //fourth ball
+specLoc pathB[18] = {{2,4,0,false},{4,4,1,true},{2,4,3,false},{2,0,2,true},//first ball... all ball retrievals from this position should end in {2,0,2}
+{2,3,0,false},{1,3,3,false},{1,4,0,true},{1,3,2,false},{2,3,1,false},{2,0,2,true}, //second ball
+{2,3,0,false},{3,3,1,false},{3,4,0,true},{3,3,3,false},{2,3,3,true},{2,0,2,true}, //third ball
+{2,4,0,true},{2,0,2,true}}; //fourth ball
 
-specLoc pathC[22] = {{3,1,0},{0,1,3},{3,1,1},{3,0,2}, //first ball.. all ball retrievals from this position should end in {3,0,2}
-{3,2,0},{4,2,1},{4,4,0},{4,2,2},{3,2,3},{3,0,2}, //second ball
-{3,1,0},{4,1,1},{3,1,3},{3,0,2}, //third ball
-{3,2,0},{4,2,1},{3,2,3},{3,0,2}, //fourth ball
-{3,3,0},{4,3,1},{3,3,3},{3,0,2}}; //fifth ball
+specLoc pathC[22] = {{3,1,0,false},{0,1,3,true},{3,1,1,false},{3,0,2,true}, //first ball.. all ball retrievals from this position should end in {3,0,2}
+{3,2,0,false},{4,2,1,false},{4,4,0,true},{4,2,2,false},{3,2,3,false},{3,0,2,true}, //second ball
+{3,1,0,false},{4,1,1,true},{3,1,3,false},{3,0,2,true}, //third ball
+{3,2,0,false},{4,2,1,true},{3,2,3,false},{3,0,2,true}, //fourth ball
+{3,3,0,false},{4,3,1,true},{3,3,3,false},{3,0,2,true}}; //fifth ball
 
 //start of setup code
 void setup() {
@@ -46,6 +47,8 @@ Serial.println("Starting ELEC299 Teams 10-12 Competition Program.");
 delay(200);
 Serial.print("StartIR is: ");
 Serial.println(startIR-48);
+Serial.print("Car number: Team 1");
+Serial.println(teamcar);
 if(startIR == '0')
   startIR = IRreceive();
 //check for received or forced startIR value
@@ -67,9 +70,9 @@ switch(startIR)
 
 
 //motor initialization code area
-  PAN.attach(11);    //pan fully left at 0, fullly right at 180, 90 is center
-  TILT.attach(9);    //tilt horizontal at 70 degrees, verticle at 160, dont go below 15 degrees
-  GRIP.attach(10);   //grip open entirely at 40 degrees to closed entirely at 180 degrees
+  PAN.attach(PANPIN);    //pan fully left at 0, fullly right at 180, 90 is center
+  TILT.attach(TILTPIN);    //tilt horizontal at 70 degrees, verticle at 160, dont go below 15 degrees
+  GRIP.attach(GRIPPIN);   //grip open entirely at 40 degrees to closed entirely at 180 degrees
   PAN.write(90);
   delay(100);
   TILT.write(160);
@@ -77,26 +80,19 @@ switch(startIR)
   GRIP.write(40);
   delay(100);
   
-  delay(2000);
 
-  currentLoc = {1,-1,0};
+  currentLoc = {pathselect+1,-1,0,false};
 
   if (currentLoc.x == 1){
     Serial.println("driving to 1 0 0");
-      driveTo({1,0,0});
+      driveTo({1,0,0,false});
   }else if (currentLoc.x == 2){
-      driveTo({2,0,0});
+      driveTo({2,0,0,false});
   }else {
-      driveTo({3,0,0});
+      driveTo({3,0,0,false});
   }
   Serial.println("Arrived at starting loc");
-
-  driveTo({4,0,1});
-      driveTo({4,2,0});
-      driveTo({4,0,2});
-      driveTo({1,0,3});
-      driveTo({1,0,0});  
-  /*
+  
   int pathlength[] = {24,18,22};
   for(int a = 0;a<pathlength[pathselect];a++)
   {
@@ -116,7 +112,7 @@ switch(startIR)
     }
     
   }
-  */
+  
   
   Serial.println("Finished path area.");
 
@@ -131,12 +127,14 @@ delay(1000);
 
 void loop() {
   serialCheck();
-  
+  stopD();
+  delay(1000);
+  Serial.println("Execution Finished.");
   //test code for get and drop only
-  getBall();
-  delay(1000);
-  dropBall();
-  delay(1000);
+//  getBall();
+//  delay(1000);
+//  dropBall();
+//  delay(1000);
   //line follower code()
   
 }
@@ -299,7 +297,9 @@ while(dist <= 500)
 
 void grabballnow()// grabbing part only
 {
-  TILT.write(90);
+  int tiltangle[] = {70,70,70};
+  
+  TILT.write(tiltangle[teamcar]);
     analogWrite(LEFTSPD, 0);   //PWM Speed Control
     analogWrite(RIGHTSPD, 0);   //PWM Speed Control
     delay(1000);
@@ -307,9 +307,9 @@ void grabballnow()// grabbing part only
 //GRAB BALL
  
 
-      force = 0;
+      int force = 0;
       int n = 40;
-      while (force < 600 && n < 175 ) {
+      while (force < 600 && n < 180 ) {
         
         force = analogRead(GRIPSENSOR); //input pin used for gripper sensitivity (this should read HIGH or LOW
         Serial.print("F:");
@@ -317,8 +317,10 @@ void grabballnow()// grabbing part only
         GRIP.write(n);
         n = n + 2; 
         
-      delay(150);
+      delay(70);
     }
+    if(n<180)
+      holding = true;
         delay(500);
         TILT.write(160);
         delay(500);
@@ -329,63 +331,97 @@ void dropBall()
   delay(500);
   GRIP.write(40);
   delay(500);
+  holding = false;
 }
 
 
-
-void getballWallCheck(){
-//This will go under the line following code
-
-   int dist = 0;
-   dist = analogRead(IRFRONT);
-   Serial.println(dist);
-    if (dist<threshold1) {
-    digitalWrite(RIGHTDIR,HIGH);
-  digitalWrite(LEFTDIR,HIGH);
-  analogWrite(RIGHTSPD,255);
-  analogWrite(LEFTSPD,255);
-    }
- if (dist>threshold1 && dist<threshold2) {
-    digitalWrite(RIGHTDIR,HIGH);
-  digitalWrite(LEFTDIR,HIGH);
-  analogWrite(RIGHTSPD,120);
-  analogWrite(LEFTSPD,120);
-    }
-    if (dist>threshold2) {
-    digitalWrite(RIGHTDIR,HIGH);
-  digitalWrite(LEFTDIR,HIGH);
-  analogWrite(RIGHTSPD,0);
-  analogWrite(LEFTSPD,0);
-    }
-delay(10);
-}
-
-
-void collisionsense()
+void encdrive(int gostep)
 {
-    // just does one check
-   int dist = 0;
-   dist = analogRead(IRFRONT);
-   Serial.print("IR Prox value: ");
-   Serial.println(dist);
-    if (dist<threshold1) {
+  int eCount = 0;
+          int revstep[] = {3,3,3};
+          int inter = digitalRead(EL);
+          while(eCount < gostep){ 
+                    if (inter != digitalRead(EL)){
+                      inter = digitalRead(EL);
+                      eCount++;
+                      Serial.print("ed");
+                      Serial.println(eCount);
+                    }
+                }
+}
+
+void getSequence(){
+//This will go under the line following code
     digitalWrite(RIGHTDIR,HIGH);
-    digitalWrite(LEFTDIR,HIGH);
-    analogWrite(RIGHTSPD,255);
-    analogWrite(LEFTSPD,255);
-    }
- if (dist>threshold1 && dist<threshold2) {
-  digitalWrite(RIGHTDIR,HIGH);
   digitalWrite(LEFTDIR,HIGH);
   analogWrite(RIGHTSPD,120);
   analogWrite(LEFTSPD,120);
-  }
- if (dist>threshold2) {
+Serial.println("Waiting for bumper");
+        while(digitalRead(LBUMP)==HIGH && digitalRead(RBUMP)== HIGH)
+        {
+          int lval = analogRead(L);
+           int  rval = analogRead(R);
+           int  cval = analogRead(C);
+          if (lval >= LTHRESH[teamcar]){   //if left sensor sees black
+               adjSpeed(1, 0);
+            }else if (rval >= RTHRESH[teamcar]){  //if right sensor sees black
+               adjSpeed(0, 1);
+            }else if (cval >= CTHRESH[teamcar]){
+               adjSpeed(1, 1);
+            }        
+        }
+        Serial.println("Will now grab/drop.");
+        if (holding)
+        {
+          dropBall();
+        }
+
+        //may require adjustment later
+        else
+        {
+          digitalWrite(RIGHTDIR,LOW);
+          digitalWrite(LEFTDIR,LOW);
+           analogWrite(RIGHTSPD,velRW);
+          analogWrite(LEFTSPD,velLW);
+          int revstep[] = {3,3,3};
+          encdrive(revstep[teamcar]);
+        //backed up car
+         grabballnow();
+        }
+        delay(300);
+        
+        
+        
+        pivot((currentLoc.dir + 2)%4);
+
   digitalWrite(RIGHTDIR,HIGH);
   digitalWrite(LEFTDIR,HIGH);
-  analogWrite(RIGHTSPD,0);
-  analogWrite(LEFTSPD,0);
-  }
-delay(10);
-}
+  analogWrite(RIGHTSPD,velRW);
+  analogWrite(LEFTSPD,velLW);
+while(1)
+        {
+        int lval = analogRead(L);
+           int  rval = analogRead(R);
+           int  cval = analogRead(C);
+          if (lval >= LTHRESH[teamcar]){   //if left sensor sees black
+               adjSpeed(1, 0);
+            }else if (rval >= RTHRESH[teamcar]){  //if right sensor sees black
+               adjSpeed(0, 1);
+            }else if (cval >= CTHRESH[teamcar]){
+               adjSpeed(1, 1);
+            }        
 
+        if (lval >= LTHRESH[teamcar] && cval >= CTHRESH[teamcar] && rval >= RTHRESH[teamcar])
+          {
+            Serial.println("Finished get/drop");
+            stopD();
+            digitalWrite(RIGHTDIR,HIGH);
+          digitalWrite(LEFTDIR,HIGH);
+           analogWrite(RIGHTSPD,velRW);
+          analogWrite(LEFTSPD,velLW);
+          encdrive(INTERSECTSTEP[teamcar]);
+            break;
+          }
+        
+        }
+}

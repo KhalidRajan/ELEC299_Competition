@@ -17,7 +17,7 @@ typedef struct specLoc{
   int x;
   int y;
   int dir;
-//  boolean isTar;
+  boolean action;
 } specLoc ;       
 
 // variables for sensors
@@ -26,10 +26,10 @@ typedef struct specLoc{
 
 int countInter;
 int i;
-int LTHRESH[] = {850,990,850}; //black line sensor threshold for each team's  car
-int RTHRESH[] = {850,990,850}; //black
-int CTHRESH[] = {850,990,950}; //black
-int PROXTHRESH[] = {420,420,420};
+int LTHRESH[] = {970,990,850}; //black line sensor threshold for each team's  car
+int RTHRESH[] = {970,990,850}; //black
+int CTHRESH[] = {970,990,850}; //black
+int PROXTHRESH[] = {350,420,420};
 int INTERSECTSTEP[]={6,8,6};
 
 float velFact = 1.0;
@@ -44,6 +44,7 @@ void drive(bool dir);
 void driveTo(specLoc tLoc);
 void stopD();
 void adjSpeed(float rF, float lF);
+void getSequence();
 
 specLoc currentLoc;
 specLoc diceLoc[15] = {{0,0,3},{0,1,3},{0,2,3},{0,3,3},{0,4,3},
@@ -78,6 +79,11 @@ void driveTo(specLoc tLoc){ //go somewhere in a straight line
    boolean flag;
    int dist,r;
 	 int intL,intR;
+  Serial.print("Driving to (");
+  Serial.print(tLoc.x);
+  Serial.print(",");
+  Serial.print(tLoc.y);
+  Serial.println(")");
      if (tLoc.x != currentLoc.x && tLoc.y != currentLoc.y){  // its too compex for this funciton
           Serial.println("too complex for driveTo!");
           return; 
@@ -104,6 +110,10 @@ void driveTo(specLoc tLoc){ //go somewhere in a straight line
                 else if (currentLoc.dir == 1){currentLoc.x += 1;} //if facing east
                 else if (currentLoc.dir == 2){currentLoc.y -= 1;} // if facing south
                 else if (currentLoc.dir == 3){currentLoc.x -= 1;}
+                Serial.print("CX: ");
+                Serial.print(currentLoc.x);
+                Serial.print("CY: ");
+                Serial.print(currentLoc.y);
                 int inter = digitalRead(EL);
                 int eCount = 0;
                 adjSpeed(1,1);
@@ -118,6 +128,11 @@ void driveTo(specLoc tLoc){ //go somewhere in a straight line
             }
             if (tLoc.x == currentLoc.x && tLoc.y == currentLoc.y){
                 Serial.println("arrived at target");
+                if(tLoc.action)//needs to pick up/drop at target.
+                  {
+                    Serial.println("Doing get sequence");
+                    getSequence();
+                  }
                 break; 
             }
             if (lval >= LTHRESH[teamcar]){   //if left sensor sees black
