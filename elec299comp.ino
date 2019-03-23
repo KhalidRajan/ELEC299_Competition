@@ -1,112 +1,51 @@
 //ELEC 299 competitions
 //for teams 10 11 12
 
+//---------PUT CAR NUMBER HERE (Team 10 = 0, Team  11 = 1, Team  12 = 2)
+int teamcar = 1;
+
 //libraries to include
+
 #include <Servo.h>
 #include "QSerial.h"
+#include "./globVars.h"
+#include "./rFunctions.h"
 
-//pin definitions
-#define IRPIN 3
+specLoc pathA[24] = {{4,0,1},{1,0,3},{1,0,2}, //first ball... all ball retrievals from this positions should end in {1,0,2}
+{1,2,0},{0,2,3},{0,4,0},{0,2,2},{1,2,1},{1,0,2}, // second ball
+{0,0,3},{1,0,1},{1,0,2}, //third ball
+{1,2,0},{0,2,3},{1,2,1},{1,0,2}, //fourth ball
+{1,3,0},{0,3,3},{1,3,1},{1,0,2}, //fifth ball
+{1,4,0},{0,4,3},{1,4,1},{1,0,2}}; //sixth ball
 
-#define IRFRONT A1
-#define GRIPSENSOR A2
-#define L1 A3
-#define L2 A4
-#define L3 A5
-#define RIGHTSPD 6
-#define RIGHTDIR 7
-#define LEFTSPD 5
-#define LEFTDIR 4
-#define MAXPULSE 65000
-#define RESOLUTION 20
-#define EL 8
-#define EL 9
-//other constant definitions
-#define threshold1 225
-#define threshold2 350
+specLoc pathB[18] = {{2,4,0},{4,4,1},{2,4,3},{2,0,2},//first ball... all ball retrievals from this position should end in {2,0,2}
+{2,3,0},{1,3,3},{1,4,0},{1,3,2},{2,3,1},{2,0,2}, //second ball
+{2,3,0},{3,3,1},{3,4,0},{3,3,3},{2,3,3},{2,0,2}, //third ball
+{2,4,0},{2,0,2}}; //fourth ball
 
-//typedefs and structs
-typedef struct specloc
-{
-  int x;
-  int y;
-  int dir;
-}specLoc;   
-
-//start of global variables
-Servo PAN, TILT, GRIP;
-
-QSerial IRrx;
-
-boolean running = true;
-boolean debugging = false;
-
-int x = 0;
-int y = 0;
-int dir = 0;
-int instructionnumber = 0;//make this one the same all around
-int dist;
-int force = 0;
-
-int pathselect;
-
-//end of global variables
-
-//function definition area
-void drStraight();
-void pivot(int, int);
-void drive(bool);
-void driveTo(specLoc tLoc);
-//void rev();
-void stopD();
-//void updateLoc();
-bool makeReady(specLoc targetL,specLoc currentL);
-
-
-//VARIABLES IMPORTED FROM OTHER PROJECTS,WHEN POSSIBLE MERGE WITH OTHER VARIABLES
-//path tracking variables
-int E1 = RIGHTSPD;//right Wheel Speed
-int E2 = LEFTSPD;//left Wheel speed
-int M1 = RIGHTDIR;//right(forward HIGH)or back LOW
-int M2 = LEFTDIR;//left(forward HIGH)or back LOW
-int L = L1;
-int R = L2;
-int C = L3;
-int countInter;
-
-int LCount = 0;
-int RCount = 0;
-
-int LTHRESH = 980; //black
-int RTHRESH = 980; //black
-int CTHRESH = 980; //black //for team 11 is 980
-int lval;
-int rval;
-int cval;
-float velFact = 1.2;
-float velRW = 100*velFact;
-float velLW = 90*velFact;
-specLoc currentLoc;
-specLoc targetLoc[14];
-specLoc homeLocS[3] = {{1,0,2},
-                      {2,0,2},
-                      {3,0,2}};
-specLoc homeLocN[3] = {{1,0,1},
-                    {2,0,1},
-                    {3,0,1}};
-//IR variables
-byte startIR = '1'; //'0' for check sensor for byte, '1', '2', '3' to force without checking.
+specLoc pathC[22] = {{3,1,0},{0,1,3},{3,1,1},{3,0,2}, //first ball.. all ball retrievals from this position should end in {3,0,2}
+{3,2,0},{4,2,1},{4,4,0},{4,2,2},{3,2,3},{3,0,2}, //second ball
+{3,1,0},{4,1,1},{3,1,3},{3,0,2}, //third ball
+{3,2,0},{4,2,1},{3,2,3},{3,0,2}, //fourth ball
+{3,3,0},{4,3,1},{3,3,3},{3,0,2}}; //fifth ball
 
 //start of setup code
 void setup() {
-  
+ //pin mode settings
+  pinMode(GRIPSENSOR, INPUT); //gripforcesensor
+  pinMode(EL, INPUT);
+  pinMode(ER, INPUT);
+  pinMode(RIGHTSPD, OUTPUT);
+  pinMode(LEFTSPD, OUTPUT);
+  pinMode(RIGHTDIR, OUTPUT);
+  pinMode(LEFTDIR, OUTPUT);
+    
 Serial.begin(115200);
+delay(200);
 Serial.println("Starting ELEC299 Teams 10-12 Competition Program.");
-pinMode(L1,INPUT);
-pinMode(L2,INPUT);
-pinMode(L3,INPUT);
+delay(200);
 Serial.print("StartIR is: ");
-Serial.println(startIR);
+Serial.println(startIR-48);
 if(startIR == '0')
   startIR = IRreceive();
 //check for received or forced startIR value
@@ -126,7 +65,6 @@ switch(startIR)
   pathselect = -1;
 }
 
-pinMode(GRIPSENSOR, INPUT); //gripforcesensor
 
 //motor initialization code area
   PAN.attach(11);    //pan fully left at 0, fullly right at 180, 90 is center
@@ -140,28 +78,46 @@ pinMode(GRIPSENSOR, INPUT); //gripforcesensor
   delay(100);
   
   delay(2000);
-  
-  //test path finding initialization code. Please update later.
-  currentLoc = {pathselect+1,-1,0};
+
+  currentLoc = {1,-1,0};
 
   if (currentLoc.x == 1){
+    Serial.println("driving to 1 0 0");
       driveTo({1,0,0});
-      Serial.println("done: driveTo({1,0,0}) ");
   }else if (currentLoc.x == 2){
       driveTo({2,0,0});
   }else {
       driveTo({3,0,0});
   }
-      
-      driveTo({3,0,1});
-      
-      driveTo({0,0,3});
-      
-      driveTo({0,4,0});
-     
-      driveTo({1,4,1});
-
-      driveTo({1,0,2});
+  Serial.println("Arrived at 1 0 0");
+  driveTo({4,0,1});
+      driveTo({4,2,0});
+      driveTo({4,0,2});
+      driveTo({1,0,3});
+      driveTo({1,0,0});  
+  /*
+  int pathlength[] = {24,18,22};
+  for(int a = 0;a<pathlength[pathselect];a++)
+  {
+    Serial.print("Drive sequence: Destination ");
+    Serial.println(a);
+    if(pathselect == 0)
+    {
+      driveTo(pathA[a]);
+    }
+    if(pathselect == 1)
+    {
+      driveTo(pathB[a]);
+    }
+    if(pathselect == 2)
+    {
+      driveTo(pathC[a]);
+    }
+    
+  }
+  */
+  
+  Serial.println("Finished path area.");
 
 //delay before starting loop.
 delay(1000);
@@ -299,9 +255,6 @@ byte IRreceive()
     switch(rcv)
     {
       case 0:
-      case -1:
-      break;
-      case -2:
       break;
       case '1':
       Serial.println("Choosing path 1");
@@ -407,221 +360,31 @@ delay(10);
 }
 
 
-//***************PATH FINDING
-//drive straight
-void drStraight(){ //cfact removed (was used once drStraight(9)...?)
-    if (analogRead(L) >= LTHRESH){        //if left sensor sees black
-         analogWrite(E1, velRW); //go more left (slow down right a bit)
-         analogWrite(E2, 0);
-    }else if (analogRead(R) >= RTHRESH){  //if right sensor sees black
-         analogWrite(E1, 0);        
-         analogWrite(E2, velLW);
+void collisionsense()
+{
+    // just does one check
+   int dist = 0;
+   dist = analogRead(IRFRONT);
+   Serial.print("IR Prox value: ");
+   Serial.println(dist);
+    if (dist<threshold1) {
+    digitalWrite(RIGHTDIR,HIGH);
+    digitalWrite(LEFTDIR,HIGH);
+    analogWrite(RIGHTSPD,255);
+    analogWrite(LEFTSPD,255);
     }
-    else if (analogRead(C) >= CTHRESH){
-        analogWrite(E1, velRW);
-        analogWrite(E2, velLW);
-    }
-    //go more left (slow down right a bit)
-    //if right sensor sees black 
-    //go more right (slow down left )
-}
-void drive(bool dir) {
-//    velRW = 100 *velFact;
-//    velLW = 100 *velFact;
-    digitalWrite(M1, dir);
-    digitalWrite(M2, dir);
-    analogWrite(E1, velRW);
-    analogWrite(E2, velLW);
-}
-
-void updateLoc(){
-      if (lval >= LTHRESH && cval >= CTHRESH && rval >= RTHRESH){
-          //passed an intersection
-          delay(210);
-          if (currentLoc.dir == 0){
-              currentLoc.y += 1;
-          }else if (currentLoc.dir == 1){
-              currentLoc.x += 1;
-          }else if (currentLoc.dir == 2){
-              currentLoc.y -= 1;
-          }else {
-             currentLoc.x -=1;         
-          }
-    }
-}  
-
-void stopD() {
-    analogWrite(E1, 0);
-    analogWrite(E2, 0);
-}
-void pivot(int targetDir){
-    int turnC = 0;
-    float angle;
-    int eCount = 0;
-    delay(100);
-    stopD;
-    
-    if (currentLoc.dir - targetDir == -1 || currentLoc.dir - targetDir == 3){ // that means a CW turn is needed
-        digitalWrite(M1, LOW); // right wheel  
-        digitalWrite(M2, HIGH);  // left wheel
-        analogWrite(E1, velRW);
-        analogWrite(E2, velLW);
-        currentLoc.dir = targetDir;
-        angle = 35.0;
-        while(1){
-              if (digitalRead(EL) == HIGH){
-                  eCount+= 1;
-                  Serial.println(eCount);
-                  delay(10); //Might help?
-              } 
-              if (eCount >= angle*velFact && analogRead(C) >= CTHRESH){
-                  stopD();
-                  digitalWrite(M1, HIGH); // right wheel  
-                  digitalWrite(M2, HIGH);  // left wheel
-                  Serial.println("reached black line/done pivot");
-                  break;
-              }
-        }
-    }else if (currentLoc.dir - targetDir == 1 || currentLoc.dir - targetDir == -3){ // that means a CCW turn is needed
-        digitalWrite(M1, HIGH); // right wheel  
-        digitalWrite(M2, LOW);  // left wheel
-        analogWrite(E1, velRW);
-        analogWrite(E2, velLW);
-        currentLoc.dir = targetDir;
-        angle = 35.0;
-        while(1){
-              if (digitalRead(EL) == HIGH){
-                  eCount+= 1;
-                  Serial.println(eCount);
-                  delay(10); //Might help?
-              } 
-              if (eCount >= angle*velFact && analogRead(C) >= CTHRESH){
-                  stopD();
-                  digitalWrite(M1, HIGH); // right wheel  
-                  digitalWrite(M2, HIGH);  // left wheel
-                  Serial.println("reached black line/done pivot");
-                  break;
-              }
-        }
-    }else if (currentLoc.dir - targetDir == 2 || currentLoc.dir - targetDir == -2){// means do a 180
-        digitalWrite(M1, LOW); // right wheel  
-        digitalWrite(M2, HIGH);  // left wheel
-        analogWrite(E1, velRW);
-        analogWrite(E2, velLW);
-        currentLoc.dir = targetDir;
-        angle = 75.0;
-        while(1){
-              if (digitalRead(EL) == HIGH){
-                  eCount+= 1.0;
-                  Serial.println(eCount);
-                  delay(10); //Might help?
-              } 
-              if (eCount >= angle*velFact && analogRead(R) >= RTHRESH){                 // if it read two passes stop
-                  delay(100);
-                  stopD();
-                  digitalWrite(M1, HIGH); // right wheel  
-                  digitalWrite(M2, HIGH);  // left wheel
-                  Serial.println("reached black line/done pivot");
-                  break;
-              }
-        }
-    }
+ if (dist>threshold1 && dist<threshold2) {
+  digitalWrite(RIGHTDIR,HIGH);
+  digitalWrite(LEFTDIR,HIGH);
+  analogWrite(RIGHTSPD,120);
+  analogWrite(LEFTSPD,120);
+  }
+ if (dist>threshold2) {
+  digitalWrite(RIGHTDIR,HIGH);
+  digitalWrite(LEFTDIR,HIGH);
+  analogWrite(RIGHTSPD,0);
+  analogWrite(LEFTSPD,0);
+  }
+delay(10);
 }
 
-
-bool makeReady(specLoc targetL,specLoc currentL){
-    if (targetL.x == currentL.x && targetL.y == currentL.y && targetL.dir == currentL.dir){
-          return true;
-    }else if (targetL.x == currentL.x && targetL.y == currentL.y && targetL.dir != currentL.dir){
-         pivot(targetL.dir);
-         return true;
-    }
-}
-
-
-void driveTo(specLoc tLoc){ //go somewhere in a straight line
-     int direct = tLoc.dir;
-     if (tLoc.x != currentLoc.x && tLoc.y != currentLoc.y){  // its too compex for this funciton
-          Serial.println("too complex for driveTo!");
-          return; 
-     }if (currentLoc.dir !=tLoc.dir){
-          pivot(direct);
-          Serial.print("pivoting atm " );
-     }
-     while (1){
-            lval = analogRead(L);
-            rval = analogRead(R);
-            cval = analogRead(C);
-//            Serial.print("left light sensor value is " );
-//            Serial.println(lval);
-//            
-//            Serial.print("center light sensor value is " );
-//            Serial.println(cval);
-//            
-//            Serial.print("right light sensor value is " );
-//            Serial.println(rval);
-//            
-//            Serial.print("right wheel velocity is " );
-//            Serial.println(velRW);
-//            
-//            Serial.print("left wheel velocity is " );
-//            Serial.println(velLW);
-
-//             Serial.print("Current x is ");
-//             Serial.println(currentLoc.x);
-//
-//             Serial.print("Current y is ");
-//             Serial.println(currentLoc.y);
-//
-//             Serial.print("Current dir is ");
-//             Serial.println(currentLoc.dir);
-//
-//             Serial.print("number of intersections is");
-//             Serial.println(countInter);
-            /*
-            Serial.print("BL Sensors: ");
-            Serial.print(lval);
-            Serial.print("\t");
-            Serial.print(cval);
-            Serial.print("\t");
-            Serial.println(rval);
-            Serial.print("\t");
-            */
-            drive(true); 
-            if (currentLoc.y == 0 && currentLoc.dir == 1){
-                lval = rval;
-            }
-            else if (currentLoc.y == 0 && currentLoc.dir == 3){
-                lval = rval;
-            }
-            
-
-/*updateLoc*/if (lval >= LTHRESH && cval >= CTHRESH && rval >= RTHRESH) {//passed an intersection
-                delay(150);
-                countInter +=1;
-                if (currentLoc.dir == 0){      //if facing north
-                    currentLoc.y += 1;
-                }else if (currentLoc.dir == 1){//if facing east
-                    currentLoc.x += 1;
-                }else if (currentLoc.dir == 2){// if facing south
-                    currentLoc.y -= 1;
-                }else if (currentLoc.dir == 3){
-                   currentLoc.x -=1; 
-                }         
-             }
-             drStraight(); //removed cfact???
-             if (tLoc.x == currentLoc.x && tLoc.y == currentLoc.y){
-                  delay(150);
-                  stopD();
-                  Serial.println("arrived at target");
-                  return; 
-             }
- //            Serial.print("Current x and y is ");
- //            Serial.print(currentLoc.x);
- //            Serial.println(currentLoc.y);
-
-  //           Serial.print("Current dir is ");
-  //           Serial.println(currentLoc.dir);
-             
-    }
-}
