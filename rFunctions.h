@@ -32,7 +32,7 @@ int CTHRESH[] = {850,990,950}; //black
 int PROXTHRESH[] = {420,420,420};
 int INTERSECTSTEP[]={6,8,6};
 
-float velFact = 0.8;
+float velFact = 1.0;
 float velRW = 100.0*velFact;
 float velLW = 98.0*velFact;
 
@@ -129,7 +129,7 @@ void driveTo(specLoc tLoc){ //go somewhere in a straight line
             }        
       			r = analogRead(IRr);
       			while (r >= PROXTHRESH[teamcar]){
-      			   adjSpeed(velLW*0.5, velRW*0.5);
+      			   adjSpeed(0.5, 0.5);
                r = analogRead(IRr);
                if (r < PROXTHRESH[teamcar]){
                    adjSpeed(1,1);
@@ -143,6 +143,8 @@ void driveTo(specLoc tLoc){ //go somewhere in a straight line
 
 void pivot(int targetDir){
     int turnC = 0;
+    float rightangleturn[] = {5,5,5};
+    float uturn[] = {14,14,14};
     float angle;
     int eCount = 0;
     boolean flag;
@@ -153,17 +155,17 @@ void pivot(int targetDir){
     if (currentLoc.dir - targetDir == -1 || currentLoc.dir - targetDir == 3){ // that means a CW turn is needed
         digitalWrite(RIGHTDIR, LOW); // right wheel  
         digitalWrite(LEFTDIR, HIGH);  // left wheel
-        angle = 5.0;
+        angle = rightangleturn[teamcar];
     }
     else if (currentLoc.dir - targetDir == 1 || currentLoc.dir - targetDir == -3){ // that means a CCW turn is needed
         digitalWrite(RIGHTDIR, HIGH); // right wheel  
         digitalWrite(LEFTDIR, LOW);  // left wheel
-        angle = 5.0;
+        angle = rightangleturn[teamcar];
     }
     else if (currentLoc.dir - targetDir == 2 || currentLoc.dir - targetDir == -2){// means do a 180
         digitalWrite(RIGHTDIR, LOW); // right wheel  
         digitalWrite(LEFTDIR, HIGH);  // left wheel
-        angle = 14.0;
+        angle = uturn[teamcar];
     }
 	  adjSpeed(1,1);
     while(1){

@@ -89,7 +89,8 @@ switch(startIR)
   }else {
       driveTo({3,0,0});
   }
-  Serial.println("Arrived at 1 0 0");
+  Serial.println("Arrived at starting loc");
+
   driveTo({4,0,1});
       driveTo({4,2,0});
       driveTo({4,0,2});
