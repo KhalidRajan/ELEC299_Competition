@@ -30,7 +30,7 @@ int LTHRESH[] = {970,990,850}; //black line sensor threshold for each team's  ca
 int PROXTHRESH[] = {350,420,420};
 int INTERSECTSTEP[]={6,8,6};
 
-float velFact[] = {1.4,1.0,1.0};
+float velFact[] = {1.4,1.2,1.0};
 float velRW = 100.0*velFact[teamcar];
 float velLW = 98.0*velFact[teamcar];
 
@@ -201,3 +201,4 @@ void pivot(int targetDir){
     stopD();
     return;
 }
+

@@ -4,7 +4,7 @@
 //---------PUT CAR NUMBER HERE (Team 10 = 0, Team  11 = 1, Team  12 = 2)
 //used for thresholds and other values that are unique to each car.
 int teamcar = 1;
-byte startIR = '2'; //'0' for check sensor for byte, '1', '2', '3' to force without checking.
+byte startIR = '1'; //'0' for check sensor for byte, '1', '2', '3' to force without checking.
 
 //libraries to include
 
@@ -336,7 +336,7 @@ void grabballnow()// grabbing part only
 }
 void dropBall()
 {
-  int tiltangle[] = {30,70,50};
+  int tiltangle[] = {27,70,50};
   TILT.write(170);
   delay(100);
   TILT.write(tiltangle[teamcar]);
@@ -351,7 +351,6 @@ void dropBall()
 void encdrive(int gostep)
 {
   int eCount = 0;
-          int revstep[] = {3,3,3};
           int inter = digitalRead(EL);
           while(eCount < gostep){ 
                     if (inter != digitalRead(EL)){
@@ -396,7 +395,7 @@ Serial.println("Waiting for bumper");
           digitalWrite(LEFTDIR,LOW);
            analogWrite(RIGHTSPD,velRW);
           analogWrite(LEFTSPD,velLW);
-          int revstep[] = {1,3,3};
+          int revstep[] = {3,3,3};
           encdrive(revstep[teamcar]);
         //backed up car
          grabballnow();
