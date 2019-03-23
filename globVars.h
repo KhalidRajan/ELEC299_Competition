@@ -44,13 +44,5 @@ int pathselect;
 
 //end of global variables
 
-
-//VARIABLES IMPORTED FROM OTHER PROJECTS,WHEN POSSIBLE MERGE WITH OTHER VARIABLES
-//path tracking variables
-
-
-//IR variables
-byte startIR = '2'; //'0' for check sensor for byte, '1', '2', '3' to force without checking.
-
 //grab drop ball
 boolean holding = false;

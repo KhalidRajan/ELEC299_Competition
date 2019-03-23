@@ -3,7 +3,8 @@
 
 //---------PUT CAR NUMBER HERE (Team 10 = 0, Team  11 = 1, Team  12 = 2)
 //used for thresholds and other values that are unique to each car.
-int teamcar = 1;
+int teamcar = 0;
+byte startIR = '1'; //'0' for check sensor for byte, '1', '2', '3' to force without checking.
 
 //libraries to include
 
@@ -21,7 +22,7 @@ specLoc pathA[24] = {{4,0,1,true},{1,0,3,false},{1,0,2,true}, //first ball... al
 
 specLoc pathB[18] = {{2,4,0,false},{4,4,1,true},{2,4,3,false},{2,0,2,true},//first ball... all ball retrievals from this position should end in {2,0,2}
 {2,3,0,false},{1,3,3,false},{1,4,0,true},{1,3,2,false},{2,3,1,false},{2,0,2,true}, //second ball
-{2,3,0,false},{3,3,1,false},{3,4,0,true},{3,3,3,false},{2,3,3,true},{2,0,2,true}, //third ball
+{2,3,0,false},{3,3,1,false},{3,4,0,true},{3,3,2,false},{2,3,3,false},{2,0,2,true}, //third ball
 {2,4,0,true},{2,0,2,true}}; //fourth ball
 
 specLoc pathC[22] = {{3,1,0,false},{0,1,3,true},{3,1,1,false},{3,0,2,true}, //first ball.. all ball retrievals from this position should end in {3,0,2}
@@ -79,7 +80,7 @@ switch(startIR)
   delay(100);
   GRIP.write(40);
   delay(100);
-  
+
 
   currentLoc = {pathselect+1,-1,0,false};
 
@@ -285,7 +286,7 @@ void getBall()
   digitalWrite(RIGHTDIR, HIGH);
   analogWrite(LEFTSPD, 100);   //PWM Speed Control
   analogWrite(RIGHTSPD, 100);   //PWM Speed Control
-int dist = 0;
+int dist = 1;
 while(dist <= 500)
   {
     dist = analogRead(IRFRONT);
@@ -309,14 +310,20 @@ void grabballnow()// grabbing part only
 
       int force = 0;
       int n = 40;
-      while (force < 600 && n < 180 ) {
+      while (force < 600 && n < 180) {
         
         force = analogRead(GRIPSENSOR); //input pin used for gripper sensitivity (this should read HIGH or LOW
         Serial.print("F:");
         Serial.println(force);
         GRIP.write(n);
         n = n + 2; 
-        
+          if(n > 175 && force < 600){
+            Serial.println("Missed object! Trying again");
+           TILT.write(tiltangle[teamcar]);
+            GRIP.write(40);
+            n = 40;
+            continue;
+         }
       delay(70);
     }
     if(n<180)
@@ -328,8 +335,9 @@ void grabballnow()// grabbing part only
 void dropBall()
 {
   int tiltangle[] = {30,70,70};
+  TILT.write(170);
+  delay(100);
   TILT.write(tiltangle[teamcar]);
-  delay(500);
   GRIP.write(40);
   delay(500);
  int tiltangle2[] = {160,160,160};
