@@ -3,8 +3,8 @@
 
 //---------PUT CAR NUMBER HERE (Team 10 = 0, Team  11 = 1, Team  12 = 2)
 //used for thresholds and other values that are unique to each car.
-int teamcar = 0;
-byte startIR = '1'; //'0' for check sensor for byte, '1', '2', '3' to force without checking.
+int teamcar = 1;
+byte startIR = '2'; //'0' for check sensor for byte, '1', '2', '3' to force without checking.
 
 //libraries to include
 
@@ -12,6 +12,8 @@ byte startIR = '1'; //'0' for check sensor for byte, '1', '2', '3' to force with
 #include "QSerial.h"
 #include "./globVars.h"
 #include "./rFunctions.h"
+
+//paths
 
 specLoc pathA[24] = {{4,0,1,true},{1,0,3,false},{1,0,2,true}, //first ball... all ball retrievals from this positions should end in {1,0,2}
 {1,2,0,false},{0,2,3,false},{0,4,0,true},{0,2,2,false},{1,2,1,false},{1,0,2,true}, // second ball
@@ -80,6 +82,7 @@ switch(startIR)
   delay(100);
   GRIP.write(40);
   delay(100);
+
 
 
   currentLoc = {pathselect+1,-1,0,false};
@@ -170,22 +173,22 @@ void serialEvent(){
       //Increment X position variable
       case 'X':
       Serial.print("MOO: Adjust x, now: ");
-      x = (x+1)%5;
-      Serial.println(x);
+      currentLoc.x = (currentLoc.x+1)%5;
+      Serial.println(currentLoc.x);
       break;
 
       //Increment Y position variable
       case 'Y':
       Serial.print("MOO: Adjust y, now: ");
-      y = (y+1)%6;
-      Serial.println(y);
+      currentLoc.y = (currentLoc.y+1)%6;
+      Serial.println(currentLoc.y);
       break;
 
       //Increment direction variable
       case 'D':
       Serial.print("MOO: Adjust dir, now: ");
-      dir = (dir+1)%4;
-      Serial.println(dir);
+      currentLoc.dir = (currentLoc.dir+1)%4;
+      Serial.println(currentLoc.dir);
       break;
 
       //Continue going forward until intersection
@@ -298,11 +301,10 @@ while(dist <= 500)
 
 void grabballnow()// grabbing part only
 {
-  int tiltangle[] = {30,70,70};
+  int tiltangle[] = {30,70,50};
   
   TILT.write(tiltangle[teamcar]);
-    analogWrite(LEFTSPD, 0);   //PWM Speed Control
-    analogWrite(RIGHTSPD, 0);   //PWM Speed Control
+    stopD();  //PWM Speed Control
     delay(1000);
    
 //GRAB BALL
@@ -334,7 +336,7 @@ void grabballnow()// grabbing part only
 }
 void dropBall()
 {
-  int tiltangle[] = {30,70,70};
+  int tiltangle[] = {30,70,50};
   TILT.write(170);
   delay(100);
   TILT.write(tiltangle[teamcar]);
@@ -394,7 +396,7 @@ Serial.println("Waiting for bumper");
           digitalWrite(LEFTDIR,LOW);
            analogWrite(RIGHTSPD,velRW);
           analogWrite(LEFTSPD,velLW);
-          int revstep[] = {3,3,3};
+          int revstep[] = {1,3,3};
           encdrive(revstep[teamcar]);
         //backed up car
          grabballnow();
@@ -430,7 +432,8 @@ while(1)
           digitalWrite(LEFTDIR,HIGH);
            analogWrite(RIGHTSPD,velRW);
           analogWrite(LEFTSPD,velLW);
-          encdrive(INTERSECTSTEP[teamcar]);
+          int fwstep[] = {2,8,6};
+          encdrive(fwstep[teamcar]);
             break;
           }
         

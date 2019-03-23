@@ -35,9 +35,6 @@ QSerial IRrx;
 boolean running = true;
 boolean debugging = false;
 
-int x = 0;
-int y = 0;
-int dir = 0;
 int instructionnumber = 0;//make this one the same all around
 
 int pathselect;
