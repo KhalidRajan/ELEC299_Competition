@@ -38,6 +38,7 @@ boolean debugging = false;
 int instructionnumber = 0;//make this one the same all around
 
 int pathselect;
+boolean grabfail = false;
 
 //end of global variables
 

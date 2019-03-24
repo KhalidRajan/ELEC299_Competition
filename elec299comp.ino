@@ -4,7 +4,7 @@
 //---------PUT CAR NUMBER HERE (Team 10 = 0, Team  11 = 1, Team  12 = 2)
 //used for thresholds and other values that are unique to each car.
 int teamcar = 1;
-byte startIR = '1'; //'0' for check sensor for byte, '1', '2', '3' to force without checking.
+byte startIR = '0'; //'0' for check sensor for byte, '1', '2', '3' to force without checking.
 
 //libraries to include
 
@@ -15,17 +15,17 @@ byte startIR = '1'; //'0' for check sensor for byte, '1', '2', '3' to force with
 
 //paths
 
-specLoc pathA[24] = {{4,0,1,true},{1,0,3,false},{1,0,2,true}, //first ball... all ball retrievals from this positions should end in {1,0,2}
+specLoc pathA[20] = {{4,0,1,true},{1,0,3,false},{1,0,2,true}, //first ball... all ball retrievals from this positions should end in {1,0,2}
 {1,2,0,false},{0,2,3,false},{0,4,0,true},{0,2,2,false},{1,2,1,false},{1,0,2,true}, // second ball
 {0,0,3,true},{1,0,1,false},{1,0,2,true}, //third ball
 {1,2,0,false},{0,2,3,true},{1,2,1,false},{1,0,2,true}, //fourth ball
-{1,3,0,false},{0,3,3,true},{1,3,1,false},{1,0,2,true}, //fifth ball
-{1,4,0,false},{0,4,3,true},{1,4,1,false},{1,0,2,true}}; //sixth ball
+{1,3,0,false},{0,3,3,true},{1,3,1,false},{1,0,2,true}}; //fifth ball};
 
-specLoc pathB[18] = {{2,4,0,false},{4,4,1,true},{2,4,3,false},{2,0,2,true},//first ball... all ball retrievals from this position should end in {2,0,2}
+specLoc pathB[22] = {{2,4,0,false},{4,4,1,true},{2,4,3,false},{2,0,2,true},//first ball... all ball retrievals from this position should end in {2,0,2}
 {2,3,0,false},{1,3,3,false},{1,4,0,true},{1,3,2,false},{2,3,1,false},{2,0,2,true}, //second ball
 {2,3,0,false},{3,3,1,false},{3,4,0,true},{3,3,2,false},{2,3,3,false},{2,0,2,true}, //third ball
-{2,4,0,true},{2,0,2,true}}; //fourth ball
+{2,4,0,true},{2,0,2,true}, //fourth ball
+{2,4,0,false},{0,4,3,true},{2,4,1,false},{2,0,2,true}}; //Fifth Ball
 
 specLoc pathC[22] = {{3,1,0,false},{0,1,3,true},{3,1,1,false},{3,0,2,true}, //first ball.. all ball retrievals from this position should end in {3,0,2}
 {3,2,0,false},{4,2,1,false},{4,4,0,true},{4,2,2,false},{3,2,3,false},{3,0,2,true}, //second ball
@@ -73,10 +73,11 @@ switch(startIR)
 
 
 //motor initialization code area
-  PAN.attach(PANPIN);    //pan fully left at 0, fullly right at 180, 90 is center
+  PAN.attach(PANPIN);    //pan fully left at 0, fully right at 180, 90 is center
   TILT.attach(TILTPIN);    //tilt horizontal at 70 degrees, verticle at 160, dont go below 15 degrees
   GRIP.attach(GRIPPIN);   //grip open entirely at 40 degrees to closed entirely at 180 degrees
-  PAN.write(90);
+  int panSet[] = {88,90,96};
+  PAN.write(panSet[teamcar]);
   delay(100);
   TILT.write(160);
   delay(100);
@@ -97,22 +98,22 @@ switch(startIR)
   }
   Serial.println("Arrived at starting loc");
   
-  int pathlength[] = {24,18,22};
-  for(int a = 0;a<pathlength[pathselect];a++)
+  int pathlength[] = {20,22,22};
+  for(instructionnumber = 0;instructionnumber<pathlength[pathselect];instructionnumber++)
   {
     Serial.print("Drive sequence: Destination ");
-    Serial.println(a);
+    Serial.println(instructionnumber);
     if(pathselect == 0)
     {
-      driveTo(pathA[a]);
+      driveTo(pathA[instructionnumber]);
     }
     if(pathselect == 1)
     {
-      driveTo(pathB[a]);
+      driveTo(pathB[instructionnumber]);
     }
     if(pathselect == 2)
     {
-      driveTo(pathC[a]);
+      driveTo(pathC[instructionnumber]);
     }
     
   }
@@ -132,7 +133,7 @@ delay(1000);
 void loop() {
   serialCheck();
   stopD();
-  delay(1000);
+  delay(10000);
   Serial.println("Execution Finished.");
   //test code for get and drop only
 //  getBall();
@@ -148,26 +149,48 @@ void loop() {
 void serialEvent(){
   debugging = true;
   while(Serial.available()){
-    delay(400);
+    delay(1000);
     char rcv = (char)Serial.read();
     switch (rcv){
+      case '0':
+      Serial.println("MOO: Resetting to start position.");
+      stopD();
+      Serial.println("Please wait...");
+      delay(1500);
+      asm volatile ("  jmp 0");//soft reset function
+      break;
+      
       //Right turn
       case 'R':
       Serial.println("MOO: Turning Right");
+      pivot((currentLoc.dir+1)%4);
       break; //have a kitkat
 
       //Left turn
       case 'L':
       Serial.println("MOO: Turning Left");
+      pivot((currentLoc.dir+3)%4);
       break;
 
       //Start or stop toggle
       case 'S':
-      if(running)
-        Serial.println("MOO: Stopping");
+            running = !running;
+      if(!running)
+        {
+          Serial.println("MOO: Stopping");
+          stopD();
+          while(!running)
+          {
+            delay(1000);
+            serialEvent();
+          }
+        }
+        
       else
-        Serial.println("MOO: Starting");
-      running = !running;
+        {
+          Serial.println("MOO: Starting");
+        }
+
       break;
 
       //Increment X position variable
@@ -195,6 +218,12 @@ void serialEvent(){
       case 'C':
       Serial.println("MOO: Continuing forward.");
       //do something
+      velRW[teamcar] = 100.0*velFact[teamcar];
+      velLW[teamcar] = 98.0*velFact[teamcar];
+      digitalWrite(RIGHTDIR, HIGH);
+      digitalWrite(LEFTDIR, HIGH);
+      analogWrite(RIGHTSPD, velRW[teamcar]);
+      analogWrite(LEFTSPD, velLW[teamcar]);
       break;
 
       //Drop
@@ -226,6 +255,17 @@ void serialEvent(){
       Serial.println(instructionnumber);
       break;
 
+      case 'V':
+      Serial.print("MOO: Reverse");
+      drive(false);
+      Serial.println(instructionnumber);
+      break;
+      
+      case 'H':
+      Serial.print("MOO: Halting Movement.");
+      stopD();
+      break;
+
 /*
       //a function very close to making the cut
       case 'M':
@@ -238,6 +278,8 @@ void serialEvent(){
       Serial.println(" not implemented.");
     }
   }
+  if(running)
+    Serial.println("Exit Debug Mode. Will try to resume normal operation.");
   debugging = false;
 }
 
@@ -254,10 +296,13 @@ byte IRreceive()
   byte rcv = 0;
   while (rcv < 1 || rcv > 250)
   {
+    serialCheck();
      rcv = IRrx.receive(200);
     switch(rcv)
     {
       case 0:
+      break;
+      case 255:
       break;
       case '1':
       Serial.println("Choosing path 1");
@@ -312,23 +357,75 @@ void grabballnow()// grabbing part only
 
       int force = 0;
       int n = 40;
+      int attempts = 1;
       while (force < 600 && n < 180) {
-        
+        serialCheck();
         force = analogRead(GRIPSENSOR); //input pin used for gripper sensitivity (this should read HIGH or LOW
-        Serial.print("F:");
-        Serial.println(force);
+        if(force>0)
+        {
+          Serial.print("F:");
+          Serial.println(force);
+          serialCheck();
+        }
         GRIP.write(n);
         n = n + 2; 
-          if(n > 175 && force < 600){
-            Serial.println("Missed object! Trying again");
-           TILT.write(tiltangle[teamcar]);
+          if(n > 179 && force < 600){
+            attempts = attempts +1;
+            Serial.print("Missed object! ");
+            
+            if(attempts>5)
+            {
+              Serial.println("Too many attempts. Giving up.");
+              grabfail = true;
+               break;
+            }
+            Serial.print(attempts);
+            Serial.print("th attempt of 5.");
+           TILT.write(160);
             GRIP.write(40);
             n = 40;
+            //re approach and try again
+            digitalWrite(RIGHTDIR,LOW);
+          digitalWrite(LEFTDIR,LOW);
+           analogWrite(RIGHTSPD,velRW[teamcar]);
+          analogWrite(LEFTSPD,velLW[teamcar]);
+          int revstep[] = {5,5,5};
+          encdrive(revstep[teamcar]);
+          digitalWrite(RIGHTDIR,HIGH);
+          digitalWrite(LEFTDIR,HIGH);
+          Serial.println("Waiting for bumper again");
+        while(digitalRead(LBUMP)==HIGH && digitalRead(RBUMP)== HIGH)
+        {
+          serialCheck();
+          int lval = analogRead(L);
+           int  rval = analogRead(R);
+           int  cval = analogRead(C);
+          if (lval >= LTHRESH[teamcar]){   //if left sensor sees black
+               adjSpeed(1, 0);
+            }else if (rval >= LTHRESH[teamcar]){  //if right sensor sees black
+               adjSpeed(0, 1);
+            }else if (cval >= LTHRESH[teamcar]){
+               adjSpeed(1, 1);
+            }        
+        }
+
+          digitalWrite(RIGHTDIR,LOW);
+          digitalWrite(LEFTDIR,LOW);
+           analogWrite(RIGHTSPD,velRW[teamcar]);
+          analogWrite(LEFTSPD,velLW[teamcar]);
+          int revstep2[] = {3,3,3};
+          encdrive(revstep2[teamcar]);
+          TILT.write(tiltangle[teamcar]);
+    stopD();  //PWM Speed Control
+    delay(1000);
+
+          
             continue;
          }
       delay(70);
     }
-    if(n<180)
+    n = n + 20;
+    GRIP.write(n);
       holding = true;
         delay(500);
         TILT.write(160);
@@ -342,7 +439,7 @@ void dropBall()
   TILT.write(tiltangle[teamcar]);
   GRIP.write(40);
   delay(500);
- int tiltangle2[] = {160,160,160};
+  int tiltangle2[] = {160,160,160};
   TILT.write(tiltangle2[teamcar]);
   holding = false;
 }
@@ -350,14 +447,13 @@ void dropBall()
 
 void encdrive(int gostep)
 {
+  serialCheck();
   int eCount = 0;
           int inter = digitalRead(EL);
           while(eCount < gostep){ 
                     if (inter != digitalRead(EL)){
                       inter = digitalRead(EL);
                       eCount++;
-                      Serial.print("ed");
-                      Serial.println(eCount);
                     }
                 }
 }
@@ -371,6 +467,7 @@ void getSequence(){
 Serial.println("Waiting for bumper");
         while(digitalRead(LBUMP)==HIGH && digitalRead(RBUMP)== HIGH)
         {
+          serialCheck();
           int lval = analogRead(L);
            int  rval = analogRead(R);
            int  cval = analogRead(C);
@@ -393,23 +490,23 @@ Serial.println("Waiting for bumper");
         {
           digitalWrite(RIGHTDIR,LOW);
           digitalWrite(LEFTDIR,LOW);
-           analogWrite(RIGHTSPD,velRW);
-          analogWrite(LEFTSPD,velLW);
+           analogWrite(RIGHTSPD,velRW[teamcar]);
+          analogWrite(LEFTSPD,velLW[teamcar]);
           int revstep[] = {3,3,3};
           encdrive(revstep[teamcar]);
         //backed up car
          grabballnow();
         }
         delay(300);
-        
+          
         
         
         pivot((currentLoc.dir + 2)%4);
 
   digitalWrite(RIGHTDIR,HIGH);
   digitalWrite(LEFTDIR,HIGH);
-  analogWrite(RIGHTSPD,velRW);
-  analogWrite(LEFTSPD,velLW);
+  analogWrite(RIGHTSPD,velRW[teamcar]);
+  analogWrite(LEFTSPD,velLW[teamcar]);
 while(1)
         {
         int lval = analogRead(L);
@@ -426,11 +523,20 @@ while(1)
         if (lval >= LTHRESH[teamcar] && cval >= LTHRESH[teamcar] && rval >= LTHRESH[teamcar])
           {
             Serial.println("Finished get/drop");
+            if(analogRead(GRIPSENSOR) > 600)
+            {//SUCCESSFUL GRAB!
+              holding = true;
+              grabfail = false;
+            }
+            else
+            {//FAILED TO GRAB...
+              holding = false;
+            }
             stopD();
             digitalWrite(RIGHTDIR,HIGH);
           digitalWrite(LEFTDIR,HIGH);
-           analogWrite(RIGHTSPD,velRW);
-          analogWrite(LEFTSPD,velLW);
+           analogWrite(RIGHTSPD,velRW[teamcar]);
+          analogWrite(LEFTSPD,velLW[teamcar]);
           int fwstep[] = {2,8,6};
           encdrive(fwstep[teamcar]);
             break;

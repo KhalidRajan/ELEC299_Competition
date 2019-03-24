@@ -27,12 +27,12 @@ typedef struct specLoc{
 int countInter;
 int i;
 int LTHRESH[] = {970,990,850}; //black line sensor threshold for each team's  car
-int PROXTHRESH[] = {350,420,420};
+int PROXTHRESH[] = {320,320,320};
 int INTERSECTSTEP[]={6,8,6};
 
-float velFact[] = {1.4,1.2,1.0};
-float velRW = 100.0*velFact[teamcar];
-float velLW = 98.0*velFact[teamcar];
+float velFact[] = {1.4,1.2,1.1};
+float velRW[] = {104.0*velFact[teamcar],100.0*velFact[teamcar],100.0*velFact[teamcar]};
+float velLW[] = {98.0*velFact[teamcar],100.0*velFact[teamcar],98.0*velFact[teamcar]};
 
 Servo pan, tilt, grab;
 
@@ -43,17 +43,8 @@ void driveTo(specLoc tLoc);
 void stopD();
 void adjSpeed(float rF, float lF);
 void getSequence();
-
+void serialCheck();
 specLoc currentLoc;
-specLoc diceLoc[15] = {{0,0,3},{0,1,3},{0,2,3},{0,3,3},{0,4,3},
-                       {0,4,0},{1,4,0},{2,4,0},{3,4,0},{4,4,0},
-                       {4,0,1},{4,1,1},{4,2,1},{4,3,1},{4,4,1}};
-specLoc homeLocS[3] = {{1,0,2},
-                      {2,0,2},
-                      {3,0,2}};
-specLoc homeLocN[3] = {{1,0,0},
-                      {2,0,0},
-                      {3,0,0}};
                       
 void stopD() {
     analogWrite(RIGHTSPD, 0);
@@ -62,12 +53,12 @@ void stopD() {
 void drive(bool dir) {
     digitalWrite(RIGHTDIR, dir);
     digitalWrite(LEFTDIR, dir);
-    analogWrite(RIGHTSPD, velRW);
-    analogWrite(LEFTSPD, velLW);
+    analogWrite(RIGHTSPD, velRW[teamcar]);
+    analogWrite(LEFTSPD, velLW[teamcar]);
 }
 void adjSpeed(float rF, float lF){
-    analogWrite(RIGHTSPD, velLW*rF);
-    analogWrite(LEFTSPD, velRW*lF);
+    analogWrite(RIGHTSPD, velLW[teamcar]*rF);
+    analogWrite(LEFTSPD, velRW[teamcar]*lF);
     return;
 }					  
 void driveTo(specLoc tLoc){ //go somewhere in a straight line
@@ -119,8 +110,7 @@ void driveTo(specLoc tLoc){ //go somewhere in a straight line
           					if (inter != digitalRead(EL)){
           					  inter = digitalRead(EL);
           					  eCount++;
-          					  Serial.print("i");
-          					  Serial.println(eCount);
+                     serialCheck();
           					}
         				}
             }
@@ -141,7 +131,9 @@ void driveTo(specLoc tLoc){ //go somewhere in a straight line
                adjSpeed(1, 1);
             }        
       			r = analogRead(IRr);
+            serialCheck();
       			while (r >= PROXTHRESH[teamcar]){
+            serialCheck();
       			   adjSpeed(0.5, 0.5);
                r = analogRead(IRr);
                if (r < PROXTHRESH[teamcar]){
@@ -150,6 +142,7 @@ void driveTo(specLoc tLoc){ //go somewhere in a straight line
                }
       			}
      }
+     serialCheck();
      stopD();
      return;
 }
@@ -182,16 +175,16 @@ void pivot(int targetDir){
     }
 	  adjSpeed(1,1);
     while(1){
+      serialCheck();
               if (digitalRead(EL) == HIGH && flag){
                   eCount+= 1;
-                  Serial.println(eCount);
                   flag = false;
               } 
               else if (digitalRead(EL) == LOW && !flag){
                   flag = true;
                   eCount+= 1;
               }
-              delayMicroseconds(1000);
+              delayMicroseconds(200);
               if (eCount >= angle*velFact[teamcar] && analogRead(C) >= LTHRESH[teamcar]){
                   currentLoc.dir = targetDir;
                   Serial.println("reached black line/done pivot");
@@ -201,4 +194,3 @@ void pivot(int targetDir){
     stopD();
     return;
 }
-
