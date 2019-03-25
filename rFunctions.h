@@ -18,20 +18,18 @@ typedef struct specLoc{
   int y;
   int dir;
   boolean action;
-} specLoc ;       
+} specLoc ;
 
 // variables for sensors
 
 
-
-
-const int LTHRESH[] PROGMEM = {970,990,850}; //black line sensor threshold for each team's  car
+const int LTHRESH[] PROGMEM = {970,975,850}; //black line sensor threshold for each team's  car
 const int PROXTHRESH[] PROGMEM = {320,320,320};
-const int INTERSECTSTEP[] PROGMEM ={6,8,6};
+const int INTERSECTSTEP[] PROGMEM ={7,8,7};
 
-const float velFact[] PROGMEM = {1.4,1.2,1.1};
-float velRW[] = {108.0*velFact[teamcar],98.0*velFact[teamcar],100.0*velFact[teamcar]};
-float velLW[] = {92.0*velFact[teamcar],100.0*velFact[teamcar],98.0*velFact[teamcar]};
+const float velFact[] PROGMEM = {1.3,1.3,1.2};
+float velRW[] = {103.0*velFact[teamcar],95.0*velFact[teamcar],95.0*velFact[teamcar]};
+float velLW[] = {95.0*velFact[teamcar],105.0*velFact[teamcar],100.0*velFact[teamcar]};
 
 Servo pan, tilt, grab;
 
@@ -45,6 +43,7 @@ void getSequence();
 void serialCheck();
 void songOfTheCentury();
 specLoc currentLoc;
+void encdrive(int gostep);
                       
 void stopD() {
     analogWrite(RIGHTSPD, 0);
@@ -57,8 +56,8 @@ void drive(bool dir) {
     analogWrite(LEFTSPD, velLW[teamcar]);
 }
 void adjSpeed(float rF, float lF){
-    analogWrite(RIGHTSPD, velLW[teamcar]*rF);
-    analogWrite(LEFTSPD, velRW[teamcar]*lF);
+    analogWrite(RIGHTSPD, velRW[teamcar]*rF);
+    analogWrite(LEFTSPD, velLW[teamcar]*lF);
     return;
 }					  
 void driveTo(specLoc tLoc){ //go somewhere in a straight line
@@ -69,7 +68,7 @@ void driveTo(specLoc tLoc){ //go somewhere in a straight line
    int dist,r;
 	 int intL,intR;
   int countInter;
-int i;
+  int i;
   Serial.print("Driving to (");
   Serial.print(tLoc.x);
   Serial.print(",");
@@ -79,8 +78,10 @@ int i;
           Serial.println("Too Complex!");
           return; 
      }if (currentLoc.dir !=tLoc.dir){
-          pivot(tLoc.dir);
+          
           Serial.print("Pivoting!" );
+          pivot(tLoc.dir);
+          
      }
      drive(true); 
      while (1){
@@ -106,22 +107,8 @@ int i;
                 Serial.print(currentLoc.x);
                 Serial.print("CY: ");
                 Serial.print(currentLoc.y);
-                int inter = digitalRead(EL);
-                int eCount = 0;
                 adjSpeed(1,1);
-        				while(eCount < INTERSECTSTEP[teamcar]){ 
-          					if (inter != digitalRead(EL)){
-          					  inter = digitalRead(EL);
-          					  eCount++;
-                     serialCheck();
-                     if(forcebreak)
-                      {
-                        Serial.println("FQ: Inter");
-                        forcebreak = false;
-                        break;
-                      }
-          					}
-        				}
+        				  encdrive(INTERSECTSTEP[teamcar]);
             }
             if (tLoc.x == currentLoc.x && tLoc.y == currentLoc.y){
                 Serial.println("At tLoc!");
@@ -133,11 +120,11 @@ int i;
                 break; 
             }
             if (lval >= LTHRESH[teamcar]){   //if left sensor sees black
-              Serial.print('x');
+              //Serial.print('x');
                adjSpeed(1, 0);
             }else if (rval >= LTHRESH[teamcar]){  //if right sensor sees black
                adjSpeed(0, 1);
-               Serial.print('v');
+               //Serial.print('v');
             }else if (cval >= LTHRESH[teamcar]){
                adjSpeed(1, 1);
             }        
@@ -149,6 +136,7 @@ int i;
             {
               Serial.println("will crash!");
               forcebreak = false;
+              break;
             }
       			   adjSpeed(0.5, 0.5);
                r = analogRead(IRr);
@@ -164,9 +152,10 @@ int i;
 }
 
 void pivot(int targetDir){
+  
     int turnC = 0;
-    const float rightangleturn[] = {5,5,5};
-    const float uturn[] = {14,14,14};
+    const float rightangleturn[] = {4,4,4};
+    const float uturn[] = {13,12,16};
     float angle;
     int eCount = 0;
     boolean flag;
@@ -174,6 +163,7 @@ void pivot(int targetDir){
   	if(currentLoc.dir == targetDir){
   		  return;
   	}
+   delay(700);
     if (currentLoc.dir - targetDir == -1 || currentLoc.dir - targetDir == 3){ // that means a CW turn is needed
         digitalWrite(RIGHTDIR, LOW); // right wheel  
         digitalWrite(LEFTDIR, HIGH);  // left wheel
@@ -195,15 +185,20 @@ void pivot(int targetDir){
               if (digitalRead(EL) == HIGH && flag){
                   eCount+= 1;
                   flag = false;
+                  Serial.print('z');
               } 
               else if (digitalRead(EL) == LOW && !flag){
                   flag = true;
                   eCount+= 1;
+                  Serial.print('z');
               }
               delayMicroseconds(200);
-              if (eCount >= angle*velFact[teamcar] && analogRead(C) >= LTHRESH[teamcar]){
+              if (eCount >= angle && analogRead(C) >= LTHRESH[teamcar]){
                   currentLoc.dir = targetDir;
+                  stopD();
                   Serial.println("BL detect/Good Pivot");
+                  delay(1100);
+                  
                   break;
               }
     }
