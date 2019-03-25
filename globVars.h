@@ -35,6 +35,7 @@ QSerial IRrx;
 
 boolean running = true;
 boolean debugging = false;
+boolean forcebreak = false;
 
 int instructionnumber = 0;//make this one the same all around
 

@@ -24,15 +24,14 @@ typedef struct specLoc{
 
 
 
-int countInter;
-int i;
-int LTHRESH[] = {970,990,850}; //black line sensor threshold for each team's  car
-int PROXTHRESH[] = {320,320,320};
-int INTERSECTSTEP[]={6,8,6};
 
-float velFact[] = {1.4,1.2,1.1};
-float velRW[] = {104.0*velFact[teamcar],100.0*velFact[teamcar],100.0*velFact[teamcar]};
-float velLW[] = {98.0*velFact[teamcar],100.0*velFact[teamcar],98.0*velFact[teamcar]};
+const int LTHRESH[] PROGMEM = {970,990,850}; //black line sensor threshold for each team's  car
+const int PROXTHRESH[] PROGMEM = {320,320,320};
+const int INTERSECTSTEP[] PROGMEM ={6,8,6};
+
+const float velFact[] PROGMEM = {1.4,1.2,1.1};
+float velRW[] = {108.0*velFact[teamcar],98.0*velFact[teamcar],100.0*velFact[teamcar]};
+float velLW[] = {92.0*velFact[teamcar],100.0*velFact[teamcar],98.0*velFact[teamcar]};
 
 Servo pan, tilt, grab;
 
@@ -69,20 +68,23 @@ void driveTo(specLoc tLoc){ //go somewhere in a straight line
    boolean flag;
    int dist,r;
 	 int intL,intR;
+  int countInter;
+int i;
   Serial.print("Driving to (");
   Serial.print(tLoc.x);
   Serial.print(",");
   Serial.print(tLoc.y);
   Serial.println(")");
      if (tLoc.x != currentLoc.x && tLoc.y != currentLoc.y){  // its too compex for this funciton
-          Serial.println("too complex for driveTo!");
+          Serial.println("Too Complex!");
           return; 
      }if (currentLoc.dir !=tLoc.dir){
           pivot(tLoc.dir);
-          Serial.print("pivoting atm " );
+          Serial.print("Pivoting!" );
      }
      drive(true); 
      while (1){
+            serialCheck();
             lval = analogRead(L);
             rval = analogRead(R);
             cval = analogRead(C);
@@ -112,22 +114,30 @@ void driveTo(specLoc tLoc){ //go somewhere in a straight line
           					  inter = digitalRead(EL);
           					  eCount++;
                      serialCheck();
+                     if(forcebreak)
+                      {
+                        Serial.println("FQ: Inter");
+                        forcebreak = false;
+                        break;
+                      }
           					}
         				}
             }
             if (tLoc.x == currentLoc.x && tLoc.y == currentLoc.y){
-                Serial.println("arrived at target");
+                Serial.println("At tLoc!");
                 if(tLoc.action)//needs to pick up/drop at target.
                   {
-                    Serial.println("Doing get sequence");
+                    Serial.println("Getting!");
                     getSequence();
                   }
                 break; 
             }
             if (lval >= LTHRESH[teamcar]){   //if left sensor sees black
+              Serial.print('x');
                adjSpeed(1, 0);
             }else if (rval >= LTHRESH[teamcar]){  //if right sensor sees black
                adjSpeed(0, 1);
+               Serial.print('v');
             }else if (cval >= LTHRESH[teamcar]){
                adjSpeed(1, 1);
             }        
@@ -135,6 +145,11 @@ void driveTo(specLoc tLoc){ //go somewhere in a straight line
             serialCheck();
       			while (r >= PROXTHRESH[teamcar]){
             serialCheck();
+            if(forcebreak)
+            {
+              Serial.println("will crash!");
+              forcebreak = false;
+            }
       			   adjSpeed(0.5, 0.5);
                r = analogRead(IRr);
                if (r < PROXTHRESH[teamcar]){
@@ -150,8 +165,8 @@ void driveTo(specLoc tLoc){ //go somewhere in a straight line
 
 void pivot(int targetDir){
     int turnC = 0;
-    float rightangleturn[] = {5,5,5};
-    float uturn[] = {14,14,14};
+    const float rightangleturn[] = {5,5,5};
+    const float uturn[] = {14,14,14};
     float angle;
     int eCount = 0;
     boolean flag;
@@ -188,7 +203,7 @@ void pivot(int targetDir){
               delayMicroseconds(200);
               if (eCount >= angle*velFact[teamcar] && analogRead(C) >= LTHRESH[teamcar]){
                   currentLoc.dir = targetDir;
-                  Serial.println("reached black line/done pivot");
+                  Serial.println("BL detect/Good Pivot");
                   break;
               }
     }

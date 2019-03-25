@@ -3,9 +3,9 @@
 
 //---------PUT CAR NUMBER HERE (Team 10 = 0, Team  11 = 1, Team  12 = 2)
 //used for thresholds and other values that are unique to each car.
-int teamcar = 1;
+int teamcar = 0;
 //IMPORTANT! UPDATED TO 'A' for AUTO!!!
-byte startIR = 'A'; //'A' for check sensor for byte, '0', '1', '2' to force without checking.
+byte startIR = '0'; //'A' for check sensor for byte, '0', '1', '2' to force without checking.
 
 //libraries to include
 
@@ -15,7 +15,6 @@ byte startIR = 'A'; //'A' for check sensor for byte, '0', '1', '2' to force with
 #include "./rFunctions.h"
 
 //paths
-
 specLoc pathA[20] = {{4,0,1,true},{1,0,3,false},{1,0,2,true}, //first ball... all ball retrievals from this positions should end in {1,0,2}
 {1,2,0,false},{0,2,3,false},{0,4,0,true},{0,2,2,false},{1,2,1,false},{1,0,2,true}, // second ball
 {0,0,3,true},{1,0,1,false},{1,0,2,true}, //third ball
@@ -69,7 +68,7 @@ switch(startIR)
   pathselect = 2;
   break;
   default:
-  Serial.println("Error. IR received wrong or startIR was not '0', '1', '2', '3'");
+  Serial.println("IR invalid!");
   pathselect = -1;
 }
 
@@ -91,19 +90,18 @@ switch(startIR)
   currentLoc = {pathselect+1,-1,0,false};
 
   if (currentLoc.x == 1){
-    Serial.println("driving to 1 0 0");
       driveTo({1,0,0,false});
   }else if (currentLoc.x == 2){
       driveTo({2,0,0,false});
   }else {
       driveTo({3,0,0,false});
   }
-  Serial.println("Arrived at starting loc");
+  Serial.println("StartLoc!");
   
   int pathlength[] = {20,22,22};
   for(instructionnumber = 0;instructionnumber<pathlength[pathselect];instructionnumber++)
   {
-    Serial.print("Drive sequence: Destination ");
+    Serial.print("Driving, dest:");
     Serial.println(instructionnumber);
     if(pathselect == 0)
     {
@@ -119,9 +117,6 @@ switch(startIR)
     }
     
   }
-  
-  
-  Serial.println("Finished path area.");
 
 //delay before starting loop.
 delay(1000);
@@ -136,7 +131,7 @@ void loop() {
   serialCheck();
   stopD();
   delay(3000);
-  Serial.println("Execution Finished.");
+  Serial.println("All done.");
   if(!Serial.available())
     songOfTheCentury();
 }
@@ -188,6 +183,21 @@ void serialEvent(){
           Serial.println("MOO: Starting");
         }
 
+      break;
+
+      case '1':
+      
+      break;
+      
+      case 'Z':
+      //LED force change. Only effective during IR wait.
+      if(startIR=='A')
+        startIR = '0';
+      else
+        startIR = ((startIR -'0'+1)%3)+'0';
+      Serial.print("Changed IR path to ");
+      Serial.print(startIR);
+      Serial.println(". Input 'break' command key to force start.");
       break;
 
       //Increment X position variable
@@ -263,13 +273,17 @@ void serialEvent(){
       stopD();
       break;
 
-
-      //a function very close to making the cut
+      //a performance-vital function.
       case 'M':
       Serial.println("MOO: Moo.");
       songOfTheCentury();
       break;
-           
+
+      case 'I':
+      Serial.println("MOO: Breaking out of instruction.");
+      forcebreak = true;
+      break;
+      
       default:
       Serial.print("Function ");
       Serial.print(rcv);
@@ -277,7 +291,7 @@ void serialEvent(){
     }
   }
   if(running)
-    Serial.println("Exit Debug Mode. Will try to resume normal operation.");
+    Serial.println("Exit Debug.");
   debugging = false;
 }
 
@@ -289,12 +303,24 @@ void serialCheck()
 
 byte IRreceive()
 {
-  Serial.println("Waiting for IR.");
+  Serial.println("IR Wait...");
   IRrx.attach(IRPIN,-1);
   byte rcv = 0;
   while (rcv < 1 || rcv > 250)
   {
     serialCheck();
+    if(forcebreak)
+    {
+      forcebreak = false;
+      if(startIR == 'A')
+        Serial.println("Must Set Val");
+      else
+      {
+        Serial.print("FQ IR :");
+        Serial.print(startIR);
+        return startIR;
+      }
+    }
      rcv = IRrx.receive(200);
     switch(rcv)
     {
@@ -303,43 +329,21 @@ byte IRreceive()
       case 255:
       break;
       case '0':
-      Serial.println("Choosing path 1");
+      Serial.println("Path 1");
       break;
       case '1':
-      Serial.println("Choosing path 2");
+      Serial.println("Path 2");
       break;
       case '2':
-      Serial.println("Choosing path 3");
+      Serial.println("Path 3");
       break;
       default:
-      Serial.print("Other IR get: ");
+      Serial.print("IR: ");
       Serial.println(rcv);
       rcv = -1;
     }
   }
   return rcv;
-}
-void getBall()
-{
-  //PICKUP BALL
-
-  //drive to wall code
-  //might need to use black line following code
-
- // unsigned long pickUpTime1 = millis();
-  
-  digitalWrite(LEFTDIR, HIGH);
-  digitalWrite(RIGHTDIR, HIGH);
-  analogWrite(LEFTSPD, 100);   //PWM Speed Control
-  analogWrite(RIGHTSPD, 100);   //PWM Speed Control
-int dist = 1;
-while(dist <= 500)
-  {
-    dist = analogRead(IRFRONT);
-    Serial.println(dist);
-  }
-  //AT WALL
-  grabballnow();
 }
 
 void grabballnow()// grabbing part only
@@ -358,27 +362,32 @@ void grabballnow()// grabbing part only
       int attempts = 1;
       while (force < 600 && n < 180) {
         serialCheck();
+        if(forcebreak)
+        {
+          Serial.println("FQ: Grab");
+          forcebreak = false;
+          break;
+        }
         force = analogRead(GRIPSENSOR); //input pin used for gripper sensitivity (this should read HIGH or LOW
         if(force>0)
         {
           Serial.print("F:");
           Serial.println(force);
-          serialCheck();
         }
         GRIP.write(n);
         n = n + 2; 
           if(n > 179 && force < 600){
             attempts = attempts +1;
-            Serial.print("Missed object! ");
+            Serial.print("Miss Object.");
             
             if(attempts>5)
             {
-              Serial.println("Too many attempts. Giving up.");
+              Serial.println("Give up.");
               grabfail = true;
                break;
             }
             Serial.print(attempts);
-            Serial.print("th attempt of 5.");
+            Serial.print("of");
            TILT.write(160);
             GRIP.write(40);
             n = 40;
@@ -391,10 +400,16 @@ void grabballnow()// grabbing part only
           encdrive(revstep[teamcar]);
           digitalWrite(RIGHTDIR,HIGH);
           digitalWrite(LEFTDIR,HIGH);
-          Serial.println("Waiting for bumper again");
+          Serial.println("bumpx2");
         while(digitalRead(LBUMP)==HIGH && digitalRead(RBUMP)== HIGH)
         {
           serialCheck();
+          if(forcebreak)
+          {
+            Serial.println("FQ:BMPCHK");
+            forcebreak = false;
+            break;
+          }
           int lval = analogRead(L);
            int  rval = analogRead(R);
            int  cval = analogRead(C);
@@ -424,20 +439,19 @@ void grabballnow()// grabbing part only
     }
     n = n + 20;
     GRIP.write(n);
-      holding = true;
         delay(500);
         TILT.write(160);
         delay(500);
 }
 void dropBall()
 {
-  int tiltangle[] = {27,70,50};
+  const int tiltangle[] = {27,70,50};
   TILT.write(170);
   delay(100);
   TILT.write(tiltangle[teamcar]);
   GRIP.write(40);
   delay(500);
-  int tiltangle2[] = {160,160,160};
+  const int tiltangle2[] = {160,160,160};
   TILT.write(tiltangle2[teamcar]);
   holding = false;
 }
@@ -445,27 +459,42 @@ void dropBall()
 
 void encdrive(int gostep)
 {
-  serialCheck();
   int eCount = 0;
-          int inter = digitalRead(EL);
-          while(eCount < gostep){ 
-                    if (inter != digitalRead(EL)){
-                      inter = digitalRead(EL);
+          boolean test;
+          if(test == digitalRead(EL))
+            test = true;
+          else false;
+          while(eCount < gostep){
+          serialCheck();
+          if(forcebreak)
+          {
+            Serial.println("FQ:ED");
+            forcebreak = false;
+            break;
+          }
+                    if (digitalRead(EL)==LOW && test||digitalRead(EL)==HIGH && !test){
                       eCount++;
+                      test = !test;
                     }
                 }
 }
 
 void getSequence(){
 //This will go under the line following code
-    digitalWrite(RIGHTDIR,HIGH);
+  digitalWrite(RIGHTDIR,HIGH);
   digitalWrite(LEFTDIR,HIGH);
   analogWrite(RIGHTSPD,120);
   analogWrite(LEFTSPD,120);
-Serial.println("Waiting for bumper");
-        while(digitalRead(LBUMP)==HIGH && digitalRead(RBUMP)== HIGH)
+Serial.println("BmpWait");
+        while(digitalRead(LBUMP)==HIGH || digitalRead(RBUMP)== HIGH)
         {
           serialCheck();
+          if(forcebreak)
+          {
+            Serial.println("FQ:Bump");
+            forcebreak = false;
+            break;
+          }
           int lval = analogRead(L);
            int  rval = analogRead(R);
            int  cval = analogRead(C);
@@ -477,7 +506,7 @@ Serial.println("Waiting for bumper");
                adjSpeed(1, 1);
             }        
         }
-        Serial.println("Will now grab/drop.");
+        Serial.println("Grab/drop!");
         if (holding)
         {
           dropBall();
@@ -490,7 +519,8 @@ Serial.println("Waiting for bumper");
           digitalWrite(LEFTDIR,LOW);
            analogWrite(RIGHTSPD,velRW[teamcar]);
           analogWrite(LEFTSPD,velLW[teamcar]);
-          int revstep[] = {3,3,3};
+         const  int revstep[] = {3,3,3};
+         Serial.print('b');
           encdrive(revstep[teamcar]);
         //backed up car
          grabballnow();
@@ -498,15 +528,40 @@ Serial.println("Waiting for bumper");
         delay(300);
           
         
-        
+        Serial.print('r');
         pivot((currentLoc.dir + 2)%4);
-
-  digitalWrite(RIGHTDIR,HIGH);
-  digitalWrite(LEFTDIR,HIGH);
-  analogWrite(RIGHTSPD,velRW[teamcar]);
-  analogWrite(LEFTSPD,velLW[teamcar]);
+        
+         digitalWrite(RIGHTDIR,HIGH);
+          digitalWrite(LEFTDIR,HIGH);
+           analogWrite(RIGHTSPD,velRW[teamcar]);
+          analogWrite(LEFTSPD,velLW[teamcar]);
+          
 while(1)
         {
+          if(forcebreak)
+          {
+            Serial.println("FQ:GSBL");
+            forcebreak = false;
+            if(analogRead(GRIPSENSOR) > 600)
+            {//SUCCESSFUL GRAB!
+              holding = true;
+              grabfail = false;
+              Serial.println("Grab'd!");
+            }
+            else
+            {//FAILED TO GRAB...
+              Serial.println("Drop'd!");
+              holding = false;
+            }
+            stopD();
+            digitalWrite(RIGHTDIR,HIGH);
+          digitalWrite(LEFTDIR,HIGH);
+           analogWrite(RIGHTSPD,velRW[teamcar]);
+          analogWrite(LEFTSPD,velLW[teamcar]);
+          const int fwstep[] = {2,8,6};
+          encdrive(fwstep[teamcar]);
+            break;
+          }
         int lval = analogRead(L);
            int  rval = analogRead(R);
            int  cval = analogRead(C);
@@ -520,14 +575,16 @@ while(1)
 
         if (lval >= LTHRESH[teamcar] && cval >= LTHRESH[teamcar] && rval >= LTHRESH[teamcar])
           {
-            Serial.println("Finished get/drop");
+            Serial.println("End of get/drp");
             if(analogRead(GRIPSENSOR) > 600)
             {//SUCCESSFUL GRAB!
               holding = true;
               grabfail = false;
+              Serial.println("Grabbed!");
             }
             else
             {//FAILED TO GRAB...
+              Serial.println("Dropped!");
               holding = false;
             }
             stopD();
@@ -535,7 +592,7 @@ while(1)
           digitalWrite(LEFTDIR,HIGH);
            analogWrite(RIGHTSPD,velRW[teamcar]);
           analogWrite(LEFTSPD,velLW[teamcar]);
-          int fwstep[] = {2,8,6};
+          const int fwstep[] = {2,8,6};
           encdrive(fwstep[teamcar]);
             break;
           }
@@ -545,12 +602,14 @@ while(1)
 
 void songOfTheCentury()
 {
+      const int voice[] = {7644,6068,5102};
+      const float intvl[]= {38.22,30.34,25.51};
       for(int a = 0;a<100;a++)
       {
         digitalWrite(SPECIALPIN,HIGH);
-        delayMicroseconds(6000-20*a);
+        delayMicroseconds(voice[teamcar]-((int)(floor(intvl[teamcar])*a)));
         digitalWrite(SPECIALPIN,LOW);
-        delayMicroseconds(6000-20*a);
+        delayMicroseconds(voice[teamcar]-((int)(floor(intvl[teamcar])*a)));
       }
 }
 
