@@ -4,7 +4,8 @@
 //---------PUT CAR NUMBER HERE (Team 10 = 0, Team  11 = 1, Team  12 = 2)
 //used for thresholds and other values that are unique to each car.
 int teamcar = 1;
-byte startIR = '0'; //'0' for check sensor for byte, '1', '2', '3' to force without checking.
+//IMPORTANT! UPDATED TO 'A' for AUTO!!!
+byte startIR = 'A'; //'A' for check sensor for byte, '0', '1', '2' to force without checking.
 
 //libraries to include
 
@@ -43,6 +44,7 @@ void setup() {
   pinMode(LEFTSPD, OUTPUT);
   pinMode(RIGHTDIR, OUTPUT);
   pinMode(LEFTDIR, OUTPUT);
+  pinMode(SPECIALPIN, OUTPUT);
     
 Serial.begin(115200);
 delay(200);
@@ -52,18 +54,18 @@ Serial.print("StartIR is: ");
 Serial.println(startIR-48);
 Serial.print("Car number: Team 1");
 Serial.println(teamcar);
-if(startIR == '0')
+if(startIR == 'A')
   startIR = IRreceive();
 //check for received or forced startIR value
 switch(startIR)
 {
-  case '1':
+  case '0':
   pathselect = 0;
   break;
-  case '2':
+  case '1':
   pathselect = 1;
   break;
-  case '3':
+  case '2':
   pathselect = 2;
   break;
   default:
@@ -133,15 +135,10 @@ delay(1000);
 void loop() {
   serialCheck();
   stopD();
-  delay(10000);
+  delay(3000);
   Serial.println("Execution Finished.");
-  //test code for get and drop only
-//  getBall();
-//  delay(1000);
-//  dropBall();
-//  delay(1000);
-  //line follower code()
-  
+  if(!Serial.available())
+    songOfTheCentury();
 }
 
 
@@ -266,12 +263,13 @@ void serialEvent(){
       stopD();
       break;
 
-/*
+
       //a function very close to making the cut
       case 'M':
       Serial.println("MOO: Moo.");
+      songOfTheCentury();
       break;
- */     
+           
       default:
       Serial.print("Function ");
       Serial.print(rcv);
@@ -304,13 +302,13 @@ byte IRreceive()
       break;
       case 255:
       break;
-      case '1':
+      case '0':
       Serial.println("Choosing path 1");
       break;
-      case '2':
+      case '1':
       Serial.println("Choosing path 2");
       break;
-      case '3':
+      case '2':
       Serial.println("Choosing path 3");
       break;
       default:
@@ -544,3 +542,15 @@ while(1)
         
         }
 }
+
+void songOfTheCentury()
+{
+      for(int a = 0;a<100;a++)
+      {
+        digitalWrite(SPECIALPIN,HIGH);
+        delayMicroseconds(6000-20*a);
+        digitalWrite(SPECIALPIN,LOW);
+        delayMicroseconds(6000-20*a);
+      }
+}
+

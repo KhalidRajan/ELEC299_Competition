@@ -21,6 +21,7 @@
 #define TILTPIN 9
 #define GRIPPIN 8
 
+#define SPECIALPIN 11
 //pathfinding constants
 
 

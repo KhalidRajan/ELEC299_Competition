@@ -44,6 +44,7 @@ void stopD();
 void adjSpeed(float rF, float lF);
 void getSequence();
 void serialCheck();
+void songOfTheCentury();
 specLoc currentLoc;
                       
 void stopD() {
